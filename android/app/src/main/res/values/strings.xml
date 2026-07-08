@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Clientli</string>
+    <string name="title_activity_main">Clientli</string>
+    <string name="package_name">com.clientli.app</string>
+    <string name="custom_url_scheme">com.clientli.app</string>
+</resources>
