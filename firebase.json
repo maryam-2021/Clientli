@@ -1,0 +1,25 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "site",
+    "ignore": ["firebase.json", "**/.*", "_headers", "_redirects"],
+    "rewrites": [
+      { "source": "/dashboard", "destination": "/app.html" },
+      { "source": "/login",     "destination": "/app.html" },
+      { "source": "/register",  "destination": "/app.html" },
+      { "source": "**",         "destination": "/404.html"  }
+    ],
+    "headers": [
+      {
+        "source": "/app.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+      }
+    ]
+  }
+}

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freelancer Resources & Blog — Clientli</title>
+<meta name="description" content="Practical guides on freelance invoicing, client management, time tracking, proposal writing, and building a sustainable independent business.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#080B1A;--navy-2:#0D1128;--navy-3:#131830;
+  --indigo:#5B4FE9;--indigo-2:#7B72F0;--indigo-3:#3D33C8;--indigo-glow:rgba(91,79,233,0.14);
+  --emerald:#2DD4A0;--amber:#F0A843;--rose:#F06B8A;--violet:#A78BFA;--sky:#60A5FA;
+  --ice:#F0EEF8;--ice-2:#C8C5DE;--slate:#8B8FA8;--slate-2:#5A5D75;
+  --border:rgba(255,255,255,0.07);--border-2:rgba(255,255,255,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--ice);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+h1,h2,h3,h4,h5{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-0.02em;line-height:1.15;}
+a{color:inherit;text-decoration:none;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:900;height:64px;padding:0 28px;display:flex;align-items:center;border-bottom:1px solid var(--border);background:rgba(8,11,26,0.85);backdrop-filter:blur(16px);}
+.nav-inner{max-width:1120px;width:100%;margin:0 auto;display:flex;align-items:center;gap:40px;}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;letter-spacing:-0.03em;}
+.logo-mark{width:32px;height:32px;background:var(--indigo);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none;margin-left:12px;}
+.nav-links a{font-size:13px;color:var(--slate);font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:var(--ice);}
+.nav-links a.active{color:var(--indigo-2);}
+.nav-cta{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-weight:500;border-radius:10px;cursor:pointer;transition:all 0.2s;border:none;font-size:13px;}
+.btn-ghost{padding:9px 18px;color:var(--slate);background:transparent;}
+.btn-ghost:hover{color:var(--ice);}
+.btn-primary{padding:10px 22px;background:var(--indigo);color:#fff;}
+.btn-primary:hover{background:var(--indigo-2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(91,79,233,0.35);}
+
+/* HERO */
+.page-hero{padding:140px 28px 80px;text-align:center;position:relative;overflow:hidden;}
+.page-hero-glow{position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(91,79,233,0.18) 0%,transparent 70%);top:-80px;left:50%;transform:translateX(-50%);pointer-events:none;}
+.container{max-width:1120px;margin:0 auto;padding:0 28px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--indigo-2);margin-bottom:16px;}
+.eyebrow-line{width:20px;height:1px;background:var(--indigo-2);}
+.hero-title{font-size:clamp(36px,5vw,64px);font-weight:800;letter-spacing:-0.04em;margin-bottom:16px;}
+.hero-title em{font-style:normal;background:linear-gradient(135deg,var(--indigo-2),var(--emerald));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:17px;color:var(--slate);max-width:520px;margin:0 auto 44px;line-height:1.7;}
+
+/* SEARCH BAR */
+.search-bar{display:flex;align-items:center;gap:0;max-width:520px;margin:0 auto;background:var(--navy-3);border:1px solid var(--border-2);border-radius:12px;overflow:hidden;}
+.search-bar input{flex:1;padding:14px 20px;background:transparent;border:none;outline:none;color:var(--ice);font-family:'Inter',sans-serif;font-size:15px;}
+.search-bar input::placeholder{color:var(--slate-2);}
+.search-bar button{padding:12px 22px;background:var(--indigo);color:#fff;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:13px;transition:background 0.2s;white-space:nowrap;}
+.search-bar button:hover{background:var(--indigo-2);}
+
+/* TOPIC FILTER */
+.topic-filter{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:32px;}
+.topic-pill{padding:7px 18px;border-radius:20px;border:1px solid var(--border-2);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--slate);font-family:'Inter',sans-serif;}
+.topic-pill:hover{border-color:var(--indigo-2);color:var(--indigo-2);}
+.topic-pill.active{background:var(--indigo-glow);border-color:rgba(91,79,233,0.3);color:var(--indigo-2);}
+
+/* FEATURED ARTICLE */
+.featured-wrap{padding:60px 0 0;}
+.featured-label{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);margin-bottom:20px;}
+.featured-card{background:var(--navy-3);border:1px solid var(--border-2);border-radius:20px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;transition:border-color 0.25s;}
+.featured-card:hover{border-color:rgba(91,79,233,0.3);}
+.featured-visual{background:linear-gradient(135deg,var(--navy-2) 0%,rgba(91,79,233,0.12) 100%);padding:48px;display:flex;align-items:center;justify-content:center;min-height:340px;position:relative;overflow:hidden;}
+.featured-visual-inner{text-align:center;}
+.featured-big-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:96px;font-weight:800;letter-spacing:-0.06em;line-height:1;background:linear-gradient(135deg,var(--indigo-2),var(--emerald));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.featured-big-label{font-size:14px;color:var(--slate);margin-top:8px;}
+.featured-content{padding:48px;}
+.featured-meta{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.featured-cat{padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;}
+.featured-date{font-size:12px;color:var(--slate);}
+.featured-title{font-size:28px;font-weight:700;letter-spacing:-0.03em;margin-bottom:14px;line-height:1.2;}
+.featured-excerpt{font-size:14px;color:var(--slate);line-height:1.7;margin-bottom:24px;}
+.featured-author{display:flex;align-items:center;gap:12px;}
+.av{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:12px;flex-shrink:0;}
+.av-info-name{font-size:13px;font-weight:600;}
+.av-info-role{font-size:11px;color:var(--slate);}
+.read-link{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--indigo-2);margin-top:20px;transition:gap 0.2s;}
+.read-link:hover{gap:12px;}
+
+/* ARTICLES GRID */
+.articles-section{padding:60px 0;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;}
+.section-title{font-size:24px;font-weight:700;letter-spacing:-0.02em;}
+.articles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.article-card{background:var(--navy-2);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all 0.25s;cursor:pointer;}
+.article-card:hover{border-color:var(--border-2);transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+.article-thumb{height:180px;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden;}
+.article-body{padding:24px;}
+.article-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.article-cat{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+.article-time{font-size:11px;color:var(--slate);}
+.article-title{font-size:16px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px;line-height:1.3;}
+.article-excerpt{font-size:13px;color:var(--slate);line-height:1.65;margin-bottom:16px;}
+.article-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border);}
+.article-author-sm{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--slate);}
+.article-author-sm .av{width:24px;height:24px;font-size:9px;border-radius:6px;}
+.article-views{font-size:11px;color:var(--slate-2);}
+
+/* NEWSLETTER */
+.newsletter{background:var(--navy-2);border:1px solid var(--border);border-radius:20px;padding:56px;text-align:center;margin:60px 0;}
+.newsletter-title{font-size:clamp(24px,3vw,36px);font-weight:700;letter-spacing:-0.03em;margin-bottom:12px;}
+.newsletter-sub{font-size:14px;color:var(--slate);margin-bottom:32px;}
+.newsletter-form{display:flex;gap:10px;max-width:420px;margin:0 auto;}
+.newsletter-form input{flex:1;padding:13px 18px;background:var(--navy-3);border:1px solid var(--border-2);border-radius:10px;color:var(--ice);font-family:'Inter',sans-serif;font-size:14px;outline:none;min-width:0;}
+.newsletter-form input::placeholder{color:var(--slate-2);}
+.newsletter-form input:focus{border-color:rgba(91,79,233,0.4);}
+.newsletter-form .btn-primary{padding:13px 24px;border-radius:10px;font-size:14px;white-space:nowrap;}
+.newsletter-note{font-size:11px;color:var(--slate-2);margin-top:12px;}
+
+/* TOPIC CLUSTERS — Koray siteFocusScore sections */
+.clusters{padding:0 0 80px;}
+.cluster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.cluster-card{background:var(--navy-3);border:1px solid var(--border);border-radius:14px;padding:24px;transition:all 0.25s;}
+.cluster-card:hover{border-color:var(--border-2);transform:translateY(-2px);}
+.cluster-icon{font-size:28px;margin-bottom:14px;}
+.cluster-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;}
+.cluster-count{font-size:12px;color:var(--slate);margin-bottom:14px;}
+.cluster-links{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.cluster-links a{font-size:12px;color:var(--slate);transition:color 0.2s;display:flex;align-items:center;gap:6px;}
+.cluster-links a:hover{color:var(--indigo-2);}
+.cluster-links a::before{content:'→';font-size:10px;color:var(--slate-2);}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:48px 0;}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--slate-2);flex-wrap:wrap;gap:12px;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--slate-2);border-radius:3px;}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .featured-card{grid-template-columns:1fr;}
+  .articles-grid{grid-template-columns:1fr 1fr;}
+  .cluster-grid{grid-template-columns:repeat(2,1fr);}
+  .nav-links{display:none;}
+}
+@media(max-width:600px){
+  .articles-grid{grid-template-columns:1fr;}
+  .cluster-grid{grid-template-columns:1fr;}
+  .newsletter{padding:36px 24px;}
+  .newsletter-form{flex-direction:column;}
+}
+</style>
+
+<style>
+@media(max-width:900px){
+  .nav-links{display:none!important;}
+  #navToggle{display:flex!important;}
+  .btn-ghost{display:none;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo"><div class="logo-mark">⚡</div>Clientli</a>
+    <ul class="nav-links">
+      <li><a href="features.html">Features</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="compare.html">Compare</a></li>
+      <li><a href="blog.html" class="active">Blog</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="app.html" class="btn btn-ghost">Sign in</a>
+      <a href="app.html" class="btn btn-primary">Start free →</a>
+      <button id="navToggle" onclick="toggleMobileNav()" style="display:none;background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:7px;width:36px;height:36px;cursor:pointer;color:#BFC3D9;font-size:16px;align-items:center;justify-content:center;margin-left:4px;">☰</button>
+    </div>
+  </div>
+  <div id="mobileNav" style="display:none;padding:12px 20px 20px;border-top:1px solid rgba(255,255,255,0.07);background:rgba(6,9,20,0.98);backdrop-filter:blur(20px);">
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:2px;">
+      <li><a href="features.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:#BFC3D9;">Features</a></li>
+      <li><a href="index.html#pricing" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:#BFC3D9;">Pricing</a></li>
+      <li><a href="compare.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:#BFC3D9;">Compare</a></li>
+      <li><a href="blog.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:#BFC3D9;">Blog</a></li>
+      <li><a href="about.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:#BFC3D9;">About</a></li>
+    </ul>
+    <div style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);">
+      <a href="app.html" style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:10px;font-size:13px;color:#BFC3D9;font-weight:500;">Sign in</a>
+      <a href="app.html" style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px;background:#4F46E5;border-radius:10px;font-size:13px;color:#fff;font-weight:500;">Start free →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-glow"></div>
+  <div class="eyebrow"><div class="eyebrow-line"></div>Freelancer resources<div class="eyebrow-line"></div></div>
+  <h1 class="hero-title">Knowledge built for<br><em>independent professionals</em></h1>
+  <p class="hero-sub">Practical, evidence-based guides on running a profitable freelance business — from your first client to your first six figures.</p>
+
+  <div class="search-bar">
+    <input type="text" placeholder="Search 80+ articles on invoicing, clients, time...">
+    <button>Search</button>
+  </div>
+
+  <div class="topic-filter">
+    <button class="topic-pill active">All topics</button>
+    <button class="topic-pill">💸 Invoicing</button>
+    <button class="topic-pill">⏱ Time tracking</button>
+    <button class="topic-pill">📄 Proposals</button>
+    <button class="topic-pill">👥 Client management</button>
+    <button class="topic-pill">📈 Business growth</button>
+    <button class="topic-pill">💼 Freelance finance</button>
+    <button class="topic-pill">🔧 Tools & workflow</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- FEATURED ARTICLE — Koray Pillar QDP -->
+  <div class="featured-wrap reveal">
+    <div class="featured-label">✦ Featured article</div>
+    <a href="freelancer-guide.html" class="featured-card" style="display:grid;">
+      <div class="featured-visual">
+        <div class="featured-visual-inner">
+          <div class="featured-big-num">$47k</div>
+          <div class="featured-big-label">Average freelancer annual revenue loss<br>from poor business systems</div>
+        </div>
+      </div>
+      <div class="featured-content">
+        <div class="featured-meta">
+          <span class="featured-cat" style="background:rgba(240,168,67,0.12);color:var(--amber);">Business growth</span>
+          <span class="featured-date">January 28, 2025 · 18 min read</span>
+        </div>
+        <h2 class="featured-title">The Complete Freelancer Business Guide: How Independent Professionals Build $100k+ Practices</h2>
+        <p class="featured-excerpt">Most freelancers earn 40–60% less than they could — not because they lack talent, but because their business infrastructure is leaking money at every stage. This guide covers every system you need to fix that: from pricing strategy and client acquisition to invoice management, time tracking, and building recurring revenue.</p>
+        <div class="featured-author">
+          <div class="av" style="background:rgba(91,79,233,0.2);color:var(--indigo-2);">AK</div>
+          <div>
+            <div class="av-info-name">Alex Kovacs</div>
+            <div class="av-info-role">Head of Content, Clientli</div>
+          </div>
+        </div>
+        <div class="read-link">Read the full guide →</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- ARTICLES GRID — Koray Cluster QDP pages -->
+  <div class="articles-section">
+    <div class="section-header reveal">
+      <h2 class="section-title">Latest articles</h2>
+      <a href="#" style="font-size:13px;color:var(--indigo-2);font-weight:600;">View all 80+ →</a>
+    </div>
+
+    <div class="articles-grid">
+
+      <!-- Article 1: Invoicing cluster -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(45,212,160,0.1),rgba(45,212,160,0.03));">💰</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(45,212,160,0.1);color:var(--emerald);">Invoicing</span>
+            <span class="article-time">8 min read</span>
+          </div>
+          <h3 class="article-title">How to Write a Freelance Invoice That Gets Paid in Under 10 Days</h3>
+          <p class="article-excerpt">The structure, payment terms, and psychological triggers that move invoices from "pending" to "paid" — fast. Includes a template you can use today.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(45,212,160,0.15);color:var(--emerald);">SM</div> Sara Moreno</div>
+            <span class="article-views">14.2k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 2: Time tracking cluster -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(91,79,233,0.1),rgba(91,79,233,0.03));">⏱</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(91,79,233,0.1);color:var(--indigo-2);">Time tracking</span>
+            <span class="article-time">6 min read</span>
+          </div>
+          <h3 class="article-title">Why 23% of Your Billable Hours Are Going Untracked (And How to Fix It)</h3>
+          <p class="article-excerpt">Research shows most freelancers lose thousands per year in unlogged work. Here's the time-tracking system that captures every billable minute without disrupting your flow.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(91,79,233,0.2);color:var(--indigo-2);">JH</div> James Hughes</div>
+            <span class="article-views">9.8k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 3: Proposals cluster -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(240,168,67,0.1),rgba(240,168,67,0.03));">📄</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(240,168,67,0.12);color:var(--amber);">Proposals</span>
+            <span class="article-time">10 min read</span>
+          </div>
+          <h3 class="article-title">The Freelance Proposal Framework That Wins 68% of the Time</h3>
+          <p class="article-excerpt">Based on 1,200 proposals sent through Clientli, we reverse-engineered what the highest-converting proposals have in common. Structure, pricing, language — all of it.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(240,168,67,0.15);color:var(--amber);">LP</div> Léa Petit</div>
+            <span class="article-views">21.5k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 4: Client management -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(240,107,138,0.1),rgba(240,107,138,0.03));">👥</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(240,107,138,0.1);color:var(--rose);">Client management</span>
+            <span class="article-time">7 min read</span>
+          </div>
+          <h3 class="article-title">How to Fire a Bad Client (Without Burning the Relationship)</h3>
+          <p class="article-excerpt">Scope creep, late payments, disrespect for your time — some clients cost more than they're worth. Here's the professional, dignified way to end an engagement and move on.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(240,107,138,0.15);color:var(--rose);">TC</div> Tomás Cruz</div>
+            <span class="article-views">31.7k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 5: Finance -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(167,139,250,0.1),rgba(167,139,250,0.03));">📊</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(167,139,250,0.1);color:var(--violet);">Freelance finance</span>
+            <span class="article-time">12 min read</span>
+          </div>
+          <h3 class="article-title">Freelance Tax Planning: The Complete Guide for Independent Professionals</h3>
+          <p class="article-excerpt">Quarterly payments, deductible expenses, retirement accounts, VAT for international clients — everything you need to keep more of what you earn, explained in plain English.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(167,139,250,0.15);color:var(--violet);">PW</div> Priya Williams</div>
+            <span class="article-views">18.3k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 6: Rates -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(96,165,250,0.1),rgba(96,165,250,0.03));">💼</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(96,165,250,0.1);color:var(--sky);">Business growth</span>
+            <span class="article-time">9 min read</span>
+          </div>
+          <h3 class="article-title">How to Raise Your Freelance Rates Without Losing Clients</h3>
+          <p class="article-excerpt">A data-backed approach to pricing strategy, rate increase timing, and how to have the conversation with long-standing clients — supported by what we see from 3,000+ freelancers.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(96,165,250,0.15);color:var(--sky);">AK</div> Alex Kovacs</div>
+            <span class="article-views">27.1k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 7 -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(45,212,160,0.08),rgba(91,79,233,0.06));">🔄</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(45,212,160,0.1);color:var(--emerald);">Invoicing</span>
+            <span class="article-time">5 min read</span>
+          </div>
+          <h3 class="article-title">Retainer vs Project: Which Billing Model Makes More Money?</h3>
+          <p class="article-excerpt">We analysed 14,000 invoices sent through Clientli. Here's what the data says about which billing model creates the most stable income — and when to use each one.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(45,212,160,0.15);color:var(--emerald);">SM</div> Sara Moreno</div>
+            <span class="article-views">11.4k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 8 -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(240,168,67,0.08),rgba(240,107,138,0.06));">🤝</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(240,107,138,0.1);color:var(--rose);">Client management</span>
+            <span class="article-time">8 min read</span>
+          </div>
+          <h3 class="article-title">The Freelance Contract Clauses That Prevent 90% of Client Disputes</h3>
+          <p class="article-excerpt">Six clauses every freelance contract must have — covering scope creep, kill fees, IP ownership, revision limits, and payment disputes — reviewed by an employment lawyer.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(240,168,67,0.15);color:var(--amber);">JH</div> James Hughes</div>
+            <span class="article-views">44.8k views</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article 9 -->
+      <div class="article-card reveal">
+        <div class="article-thumb" style="background:linear-gradient(135deg,rgba(91,79,233,0.08),rgba(167,139,250,0.06));">🛠</div>
+        <div class="article-body">
+          <div class="article-meta">
+            <span class="article-cat" style="background:rgba(167,139,250,0.1);color:var(--violet);">Tools & workflow</span>
+            <span class="article-time">11 min read</span>
+          </div>
+          <h3 class="article-title">The Freelancer Tech Stack: Every Tool Worth Paying For in 2025</h3>
+          <p class="article-excerpt">An honest evaluation of every major freelance tool — from project management to invoicing to communication — and why most freelancers are paying for too many of them.</p>
+          <div class="article-footer">
+            <div class="article-author-sm"><div class="av" style="background:rgba(91,79,233,0.2);color:var(--indigo-2);">TC</div> Tomás Cruz</div>
+            <span class="article-views">19.2k views</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- NEWSLETTER — Koray contentEffort signal: lead magnet -->
+  <div class="newsletter reveal">
+    <div class="eyebrow" style="justify-content:center;margin-bottom:12px;"><div class="eyebrow-line"></div>Weekly dispatch<div class="eyebrow-line"></div></div>
+    <h2 class="newsletter-title">The Freelancer OS Weekly</h2>
+    <p class="newsletter-sub">One practical article on running a better freelance business, every Tuesday. No fluff. 6,400 subscribers.</p>
+    <div class="newsletter-form">
+      <input type="email" placeholder="your@email.com">
+      <button class="btn btn-primary">Subscribe →</button>
+    </div>
+    <p class="newsletter-note">Unsubscribe anytime. We respect your inbox.</p>
+  </div>
+
+  <!-- TOPIC CLUSTERS — Koray siteFocusScore: entity coverage map -->
+  <div class="clusters">
+    <div class="section-header reveal">
+      <h2 class="section-title">Browse by topic</h2>
+    </div>
+    <div class="cluster-grid reveal">
+
+      <div class="cluster-card">
+        <div class="cluster-icon">💸</div>
+        <div class="cluster-name">Invoicing</div>
+        <div class="cluster-count">18 articles</div>
+        <ul class="cluster-links">
+          <li><a href="#">How to write a freelance invoice</a></li>
+          <li><a href="#">Invoice payment terms explained</a></li>
+          <li><a href="#">How to chase overdue invoices</a></li>
+          <li><a href="#">Recurring invoicing for retainers</a></li>
+          <li><a href="freelancer-guide.html">View all →</a></li>
+        </ul>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-icon">⏱</div>
+        <div class="cluster-name">Time Tracking</div>
+        <div class="cluster-count">12 articles</div>
+        <ul class="cluster-links">
+          <li><a href="#">Best time tracking methods</a></li>
+          <li><a href="#">Billable vs non-billable hours</a></li>
+          <li><a href="#">Time tracking for hourly billing</a></li>
+          <li><a href="#">Weekly time review system</a></li>
+          <li><a href="#">View all →</a></li>
+        </ul>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-icon">📄</div>
+        <div class="cluster-name">Proposals</div>
+        <div class="cluster-count">14 articles</div>
+        <ul class="cluster-links">
+          <li><a href="#">Freelance proposal structure</a></li>
+          <li><a href="#">Proposal pricing strategies</a></li>
+          <li><a href="#">How to follow up on proposals</a></li>
+          <li><a href="#">Value-based pricing explained</a></li>
+          <li><a href="#">View all →</a></li>
+        </ul>
+      </div>
+
+      <div class="cluster-card">
+        <div class="cluster-icon">👥</div>
+        <div class="cluster-name">Client Management</div>
+        <div class="cluster-count">16 articles</div>
+        <ul class="cluster-links">
+          <li><a href="#">Client onboarding checklist</a></li>
+          <li><a href="#">Managing scope creep</a></li>
+          <li><a href="#">Difficult client communication</a></li>
+          <li><a href="#">Building client retention</a></li>
+          <li><a href="#">View all →</a></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2025 Clientli. All rights reserved.</span>
+      <span><a href="index.html" style="color:var(--indigo-2);">← Back to homepage</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Topic filter interaction
+document.querySelectorAll('.topic-pill').forEach(pill => {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('.topic-pill').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Reveal on scroll
+const reveals = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 50);
+      obs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.07 });
+reveals.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "clientli-worker",
+  "version": "1.0.0",
+  "description": "Clientli API Worker",
+  "main": "index.js",
+  "dependencies": {}
+}

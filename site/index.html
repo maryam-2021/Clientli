@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clientli — The Freelancer OS That Runs Your Business While You Do the Work</title>
+<meta name="description" content="Clientli unifies invoicing, time tracking, proposals, client management, and analytics into one command center for independent professionals. Stop context-switching. Start earning more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   DESIGN TOKENS — REFINED PROFESSIONAL
+   ============================================ */
+:root {
+  /* Backgrounds — richer depth hierarchy */
+  --navy:      #060914;
+  --navy-2:    #0A0E1C;
+  --navy-3:    #0F1424;
+  --navy-4:    #141929;
+
+  /* Accent — cooler, more confident indigo */
+  --indigo:    #4F46E5;
+  --indigo-2:  #6366F1;
+  --indigo-3:  #3730A3;
+  --indigo-glow: rgba(79,70,229,0.12);
+
+  /* Semantic colours */
+  --emerald:   #10B981;
+  --amber:     #F59E0B;
+  --rose:      #F43F5E;
+
+  /* Text scale */
+  --ice:       #F8F8FC;
+  --ice-2:     #BFC3D9;
+  --slate:     #7B7F96;
+  --slate-2:   #484C63;
+
+  /* Borders — more visible hierarchy */
+  --border:    rgba(255,255,255,0.06);
+  --border-2:  rgba(255,255,255,0.10);
+  --border-3:  rgba(255,255,255,0.16);
+
+  /* Type scale */
+  --fs-xs:    11px;
+  --fs-sm:    13px;
+  --fs-base:  16px;
+  --fs-lg:    18px;
+  --fs-xl:    22px;
+  --fs-2xl:   28px;
+  --fs-3xl:   38px;
+  --fs-4xl:   52px;
+  --fs-5xl:   68px;
+  --fs-6xl:   88px;
+
+  /* Radius — refined, not toy-like */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--navy);
+  color: var(--ice);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Instrument Serif for display headings only */
+h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+/* Inter for all sub-headings — sharp and legible */
+h2, h3, h4, h5 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ============================================
+   SUBTLE GRAIN OVERLAY — just barely there
+   ============================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.55;
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.container--narrow {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* ============================================
+   NAV — thinner, more editorial
+   ============================================ */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 900;
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid transparent;
+  transition: all 0.4s ease;
+}
+
+nav.scrolled {
+  background: rgba(6,9,20,0.82);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom-color: var(--border);
+}
+
+.nav-inner {
+  max-width: 1140px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.03em;
+  color: var(--ice);
+}
+
+.logo-mark {
+  width: 28px; height: 28px;
+  background: var(--indigo);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin-left: 36px;
+}
+
+.nav-links a {
+  display: block;
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--slate);
+  font-weight: 450;
+  transition: color 0.18s;
+  letter-spacing: -0.01em;
+}
+.nav-links a:hover { color: var(--ice-2); }
+
+.nav-cta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================
+   BUTTONS — refined, purposeful
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: none;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.btn-ghost {
+  padding: 8px 16px;
+  color: var(--slate);
+  background: transparent;
+}
+.btn-ghost:hover { color: var(--ice-2); }
+
+.btn-primary {
+  padding: 9px 20px;
+  background: var(--indigo);
+  color: #fff;
+  font-weight: 500;
+}
+.btn-primary:hover {
+  background: var(--indigo-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(79,70,229,0.4), 0 1px 4px rgba(0,0,0,0.3);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-lg {
+  padding: 13px 28px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  letter-spacing: -0.02em;
+}
+
+.btn-outline {
+  padding: 12px 24px;
+  font-size: 15px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--ice-2);
+  letter-spacing: -0.02em;
+}
+.btn-outline:hover {
+  border-color: var(--border-3);
+  color: var(--ice);
+  background: rgba(255,255,255,0.03);
+}
+
+/* ============================================
+   HERO — editorial, spacious, authoritative
+   ============================================ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 130px 40px 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Single centred glow — controlled, not garish */
+.hero-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hero-glow-1 {
+  width: 900px; height: 600px;
+  background: radial-gradient(ellipse, rgba(79,70,229,0.13) 0%, transparent 68%);
+  top: -80px; left: 50%;
+  transform: translateX(-50%);
+}
+.hero-glow-2 {
+  width: 500px; height: 400px;
+  background: radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%);
+  bottom: 60px; right: -60px;
+}
+.hero-glow-3 {
+  width: 350px; height: 300px;
+  background: radial-gradient(ellipse, rgba(245,158,11,0.04) 0%, transparent 70%);
+  bottom: 100px; left: -30px;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(79,70,229,0.25);
+  background: rgba(79,70,229,0.08);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #A5B4FC;
+  margin-bottom: 32px;
+}
+
+.hero-eyebrow-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #A5B4FC;
+  animation: pulse 2.4s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+/* Instrument Serif headline — editorial weight, not heavy */
+.hero-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(48px, 7.5vw, 92px);
+  max-width: 880px;
+  margin: 0 auto 28px;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--ice);
+}
+
+.hero-title em {
+  font-style: italic;
+  background: linear-gradient(130deg, #818CF8 0%, #34D399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: clamp(15px, 1.6vw, 17px);
+  color: var(--slate);
+  max-width: 520px;
+  margin: 0 auto 48px;
+  line-height: 1.7;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 64px;
+}
+
+/* ---- COMMAND BAR ---- */
+.command-bar-wrap {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto 28px;
+  position: relative;
+}
+
+.command-bar {
+  background: var(--navy-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xl);
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow:
+    0 0 0 1px rgba(79,70,229,0.08),
+    0 20px 60px rgba(0,0,0,0.55),
+    0 4px 16px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.command-bar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.35) 50%, transparent);
+}
+
+.command-bar-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: rgba(79,70,229,0.1);
+  border: 1px solid rgba(79,70,229,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  color: #A5B4FC;
+}
+
+.command-bar-input {
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: var(--ice-2);
+  background: transparent;
+  border: none;
+  outline: none;
+  caret-color: var(--indigo-2);
+  min-width: 0;
+  letter-spacing: -0.01em;
+}
+
+.command-bar-input::placeholder { color: var(--slate-2); }
+
+.command-bar-kbd {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.kbd {
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border-2);
+  background: rgba(255,255,255,0.04);
+  font-size: 11px;
+  color: var(--slate);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+}
+
+/* ---- Floating cards ---- */
+.floating-cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.float-card {
+  position: absolute;
+  background: var(--navy-4);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-lg);
+  padding: 11px 15px;
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  opacity: 0;
+}
+
+.float-card-1 { top: 110px; left: -24px; animation: floatIn 0.5s ease 1.2s forwards, floatBob 5s ease 1.7s infinite; }
+.float-card-2 { top: 80px; right: -14px; animation: floatIn 0.5s ease 1.6s forwards, floatBob 5.5s ease 2.1s infinite; }
+.float-card-3 { bottom: 55px; left: 24px; animation: floatIn 0.5s ease 2.0s forwards, floatBob 4.8s ease 2.5s infinite; }
+.float-card-4 { bottom: 38px; right: 18px; animation: floatIn 0.5s ease 2.4s forwards, floatBob 6s ease 2.9s infinite; }
+
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+.float-card-label {
+  font-size: 10px;
+  color: var(--slate);
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+
+.float-card-value {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* Social proof */
+.hero-social-proof {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--slate);
+  letter-spacing: 0.01em;
+}
+
+.hero-avatars { display: flex; }
+
+.hero-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--navy-2);
+  margin-left: -7px;
+  font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+}
+.hero-avatar:first-child { margin-left: 0; }
+
+.hero-stars { color: var(--amber); letter-spacing: -1px; }
+
+/* ============================================
+   SECTION COMMON
+   ============================================ */
+section { padding: 112px 0; }
+
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--indigo-2);
+  margin-bottom: 18px;
+}
+
+.section-eyebrow-line {
+  width: 20px;
+  height: 1px;
+  background: var(--indigo-2);
+  opacity: 0.6;
+}
+
+.section-title {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(28px, 3.8vw, 48px);
+  font-weight: 700;
+  margin-bottom: 18px;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--ice);
+}
+
+.section-title em {
+  font-style: normal;
+  color: var(--indigo-2);
+}
+
+.section-sub {
+  font-size: 16px;
+  color: var(--slate);
+  line-height: 1.72;
+  max-width: 520px;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
+   PROBLEM SECTION
+   ============================================ */
+.problem {
+  background: var(--navy-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.problem-stat {
+  padding: 52px 48px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  transition: background 0.2s;
+}
+.problem-stat:hover { background: rgba(255,255,255,0.015); }
+.problem-stat:nth-child(even) { border-right: none; }
+.problem-stat:nth-child(3), .problem-stat:nth-child(4) { border-bottom: none; }
+
+.problem-stat-number {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(52px, 6vw, 76px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+.problem-stat-number.red    { color: #FB7185; }
+.problem-stat-number.amber  { color: #FCD34D; }
+.problem-stat-number.green  { color: var(--emerald); }
+.problem-stat-number.indigo { color: #818CF8; }
+
+.problem-stat-label {
+  font-size: 15px;
+  color: var(--ice-2);
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+}
+
+.problem-stat-sub {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.68;
+}
+
+/* ============================================
+   FEATURES SECTION
+   ============================================ */
+.features-intro {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.feature-card {
+  background: var(--navy-2);
+  padding: 40px 36px;
+  position: relative;
+  transition: background 0.22s ease;
+}
+.feature-card:hover { background: var(--navy-3); }
+
+.feature-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% -10%, rgba(79,70,229,0.07) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.feature-card:hover::after { opacity: 1; }
+
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 22px;
+}
+
+.feature-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 650;
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+  color: var(--ice);
+}
+
+.feature-desc {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.72;
+  margin-bottom: 22px;
+}
+
+.feature-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.feature-tag {
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  color: var(--slate-2);
+  letter-spacing: 0.01em;
+}
+
+/* ============================================
+   HOW IT WORKS
+   ============================================ */
+.how {
+  background: var(--navy-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.how-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 88px;
+  align-items: center;
+}
+
+.how-steps {
+  display: flex;
+  flex-direction: column;
+}
+
+.how-step {
+  display: flex;
+  gap: 22px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.how-step:first-child { padding-top: 0; }
+.how-step:last-child { border-bottom: none; padding-bottom: 0; }
+
+.how-step.active .how-step-num { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+.how-step.active .how-step-title { color: var(--ice); }
+.how-step.active .how-step-desc { color: var(--ice-2); }
+
+.how-step-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.2s;
+}
+
+.how-step-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--slate);
+  transition: color 0.2s;
+  letter-spacing: -0.02em;
+}
+.how-step-desc {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.65;
+  transition: color 0.2s;
+}
+
+.how-visual {
+  background: var(--navy-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(79,70,229,0.07),
+    0 40px 100px rgba(0,0,0,0.5),
+    0 8px 24px rgba(0,0,0,0.3);
+}
+
+.how-visual-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.how-panel { display: none; flex-direction: column; height: 100%; }
+.how-panel.active { display: flex; }
+
+/* Mini UI panels */
+.mini-topbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+.mini-dot { width: 9px; height: 9px; border-radius: 50%; }
+.mini-tab {
+  padding: 3px 12px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(79,70,229,0.12);
+  color: #A5B4FC;
+}
+.mini-body { flex: 1; padding: 16px; overflow: hidden; }
+
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  margin-bottom: 5px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.mini-avatar {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 9px;
+  font-family: 'Inter', sans-serif;
+}
+
+.mini-label { flex: 1; color: var(--ice-2); font-weight: 500; font-size: 11px; }
+.mini-value { color: var(--ice); font-weight: 600; font-family: 'Inter', sans-serif; font-size: 12px; }
+.mini-badge {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.mini-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.mini-stat {
+  padding: 10px 8px;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.mini-stat-val {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  letter-spacing: -0.02em;
+}
+.mini-stat-lbl { font-size: 9px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.timer-display {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 44px;
+  font-weight: 400;
+  text-align: center;
+  padding: 18px 0 10px;
+  letter-spacing: 0.02em;
+  background: linear-gradient(130deg, #818CF8, #34D399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mini-progress-list { display: flex; flex-direction: column; gap: 10px; }
+.mini-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 5px;
+  color: var(--ice-2);
+}
+.mini-progress-bar {
+  height: 3px;
+  background: var(--border-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.mini-progress-fill { height: 100%; border-radius: 2px; }
+
+/* ============================================
+   TESTIMONIALS
+   ============================================ */
+.testimonials-grid {
+  columns: 3;
+  column-gap: 20px;
+}
+
+.testimonial-card {
+  background: var(--navy-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+  break-inside: avoid;
+  transition: border-color 0.22s, transform 0.22s;
+}
+.testimonial-card:hover {
+  border-color: var(--border-2);
+  transform: translateY(-2px);
+}
+
+.testi-stars {
+  color: var(--amber);
+  font-size: 12px;
+  letter-spacing: 0px;
+  margin-bottom: 14px;
+}
+
+.testi-quote {
+  font-size: 13px;
+  color: var(--ice-2);
+  line-height: 1.72;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+.testi-quote strong { color: var(--ice); font-weight: 500; }
+
+.testi-author {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.testi-av {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.testi-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.testi-role {
+  font-size: 11px;
+  color: var(--slate);
+  margin-top: 1px;
+}
+
+/* ============================================
+   PRICING
+   ============================================ */
+.pricing {
+  background: var(--navy-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 60px;
+}
+
+.pricing-card {
+  background: var(--navy-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 36px 30px;
+  position: relative;
+  transition: all 0.22s ease;
+}
+.pricing-card:hover { transform: translateY(-2px); box-shadow: 0 20px 48px rgba(0,0,0,0.3); }
+
+.pricing-card.featured {
+  border-color: rgba(79,70,229,0.35);
+  background: linear-gradient(180deg, rgba(79,70,229,0.07) 0%, var(--navy-3) 60%);
+  box-shadow: 0 0 0 1px rgba(79,70,229,0.12), 0 24px 60px rgba(0,0,0,0.35);
+}
+
+.pricing-badge {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 14px;
+  border-radius: 20px;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pricing-plan {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--slate);
+  margin-bottom: 14px;
+}
+
+.pricing-price {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 56px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: var(--ice);
+}
+
+.pricing-price sup {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  vertical-align: super;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.pricing-cycle {
+  font-size: 11px;
+  color: var(--slate);
+  margin-bottom: 24px;
+  letter-spacing: 0.01em;
+}
+
+.pricing-desc {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.65;
+  margin-bottom: 22px;
+  min-height: 44px;
+}
+
+.pricing-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 22px;
+}
+
+.pricing-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 30px;
+}
+
+.pricing-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--ice-2);
+  letter-spacing: -0.01em;
+}
+
+.pricing-check {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(16,185,129,0.12);
+  border: 1px solid rgba(16,185,129,0.25);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--emerald);
+  margin-top: 2px;
+}
+
+/* ============================================
+   FAQ
+   ============================================ */
+.faq-list {
+  max-width: 680px;
+  margin: 60px auto 0;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.faq-q {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 22px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 550;
+  color: var(--ice);
+  transition: color 0.18s;
+  letter-spacing: -0.02em;
+}
+.faq-q:hover { color: var(--indigo-2); }
+
+.faq-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--slate);
+  transition: all 0.22s;
+}
+.faq-item.open .faq-icon {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+  transform: rotate(45deg);
+}
+
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.38s ease, padding 0.28s ease;
+}
+.faq-item.open .faq-a { max-height: 320px; padding-bottom: 22px; }
+
+.faq-a p {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.78;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
+   CTA SECTION
+   ============================================ */
+.cta-section { padding: 120px 0; }
+
+.cta-box {
+  background: var(--navy-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xl);
+  padding: 88px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-box::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 25%; right: 25%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.45) 50%, transparent);
+}
+
+.cta-glow {
+  position: absolute;
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(79,70,229,0.1) 0%, transparent 65%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.cta-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(36px, 4.5vw, 60px);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  margin-bottom: 18px;
+  position: relative;
+  color: var(--ice);
+}
+
+.cta-sub {
+  font-size: 16px;
+  color: var(--slate);
+  margin-bottom: 44px;
+  position: relative;
+  letter-spacing: -0.01em;
+  line-height: 1.65;
+}
+
+.cta-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.cta-input {
+  flex: 1;
+  height: 48px;
+  background: var(--navy-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-lg);
+  padding: 0 18px;
+  color: var(--ice);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.18s;
+  min-width: 0;
+  letter-spacing: -0.01em;
+}
+.cta-input:focus { border-color: rgba(79,70,229,0.35); }
+.cta-input::placeholder { color: var(--slate-2); }
+
+.cta-form .btn-primary {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cta-note {
+  font-size: 11px;
+  color: var(--slate-2);
+  margin-top: 14px;
+  position: relative;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 64px 0;
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 80px;
+  margin-bottom: 52px;
+}
+
+.footer-brand p {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.65;
+  margin-top: 14px;
+  letter-spacing: -0.01em;
+}
+
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+}
+
+.footer-col-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ice-2);
+  margin-bottom: 18px;
+}
+
+.footer-col-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.footer-col-links a {
+  font-size: 13px;
+  color: var(--slate);
+  transition: color 0.18s;
+  letter-spacing: -0.01em;
+}
+.footer-col-links a:hover { color: var(--ice-2); }
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--slate-2);
+  flex-wrap: wrap;
+  gap: 12px;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================
+   TRUST BAR
+   ============================================ */
+.trust-bar {
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--navy-2);
+}
+
+.trust-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 52px;
+  flex-wrap: wrap;
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: var(--slate);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.trust-icon {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: rgba(79,70,229,0.09);
+  border: 1px solid rgba(79,70,229,0.16);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+}
+
+/* ============================================
+   METRICS BAR
+   ============================================ */
+.metrics-bar { padding: 72px 0; }
+
+.metrics-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.metric {
+  padding: 40px 36px;
+  background: var(--navy-2);
+  transition: background 0.2s;
+}
+.metric:hover { background: var(--navy-3); }
+
+.metric-val {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(36px, 4vw, 52px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--slate-2); border-radius: 2px; }
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 960px) {
+  .container { padding: 0 28px; }
+  .problem-grid { grid-template-columns: 1fr; }
+  .problem-stat { border-right: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .how-layout { grid-template-columns: 1fr; gap: 40px; }
+  .how-visual { display: none; }
+  .testimonials-grid { columns: 2; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; gap: 40px; }
+  .footer-links { grid-template-columns: repeat(2, 1fr); }
+  .metrics-inner { grid-template-columns: repeat(2, 1fr); }
+  .nav-links { display: none !important; }
+  #navToggle { display: flex !important; }
+  nav { height: auto; flex-wrap: wrap; padding: 0; }
+  .nav-inner { padding: 0 20px; height: 56px; }
+  .btn-ghost { display: none; }
+  .cta-form { flex-direction: column; }
+  .cta-form .btn-primary { width: 100%; height: 48px; }
+  .cta-input { width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .hero { padding: 110px 24px 80px; }
+  .hero-title { font-size: 42px; }
+  .command-bar { padding: 14px 16px; }
+  .float-card { display: none; }
+  .pricing-card { padding: 28px 22px; }
+  .cta-box { padding: 52px 28px; }
+  .trust-bar-inner { gap: 24px; }
+  .metrics-inner { grid-template-columns: 1fr; }
+  .testimonials-grid { columns: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">⚡</div>
+      Clientli
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="features.html">Features</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="compare.html">Compare</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+
+    <div class="nav-cta">
+      <a href="app.html" class="btn btn-ghost">Sign in</a>
+      <a href="app.html" class="btn btn-primary">Start free →</a>
+      <!-- Mobile hamburger -->
+      <button id="navToggle" onclick="toggleMobileNav()" aria-label="Menu" style="display:none;background:transparent;border:1px solid var(--border2);border-radius:7px;width:36px;height:36px;cursor:pointer;color:var(--ice2);font-size:16px;align-items:center;justify-content:center;transition:all 0.2s;margin-left:4px;">☰</button>
+    </div>
+  </div>
+
+  <!-- Mobile dropdown -->
+  <div id="mobileNav" style="display:none;padding:12px 20px 20px;border-top:1px solid var(--border);background:rgba(6,9,20,0.98);backdrop-filter:blur(20px);">
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:2px;">
+      <li><a href="features.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ice2);transition:all 0.18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Features</a></li>
+      <li><a href="#how" onclick="toggleMobileNav()" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ice2);transition:all 0.18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">How it works</a></li>
+      <li><a href="index.html#pricing" onclick="toggleMobileNav()" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ice2);transition:all 0.18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Pricing</a></li>
+      <li><a href="compare.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ice2);transition:all 0.18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Compare</a></li>
+      <li><a href="blog.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ice2);transition:all 0.18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Blog</a></li>
+      <li><a href="about.html" style="display:block;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ice2);transition:all 0.18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">About</a></li>
+    </ul>
+    <div style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+      <a href="app.html" class="btn btn-secondary" style="flex:1;justify-content:center;padding:12px;">Sign in</a>
+      <a href="app.html" class="btn btn-primary" style="flex:1;justify-content:center;padding:12px;">Start free →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow hero-glow-1"></div>
+  <div class="hero-glow hero-glow-2"></div>
+  <div class="hero-glow hero-glow-3"></div>
+
+  <div class="hero-eyebrow">
+    <div class="hero-eyebrow-dot"></div>
+    Now in public beta — limited seats
+  </div>
+
+  <h1 class="hero-title">
+    The <em>command center</em><br>every freelancer deserves
+  </h1>
+
+  <p class="hero-sub">
+    Stop juggling eight tools. Clientli unifies your invoices, time tracking, proposals, client relationships, and revenue analytics into one focused workspace — so you can spend less time on admin and more time doing work that matters.
+  </p>
+
+  <div class="hero-actions">
+    <a href="app.html" class="btn btn-primary btn-lg">Get early access — it's free</a>
+    <a href="#how" class="btn btn-outline">See how it works</a>
+  </div>
+
+  <!-- SIGNATURE ELEMENT: COMMAND BAR -->
+  <div class="command-bar-wrap">
+    <div class="command-bar">
+      <div class="command-bar-icon">⌘</div>
+      <input class="command-bar-input" id="cmdInput" type="text" placeholder="What do you want to do today?" readonly>
+      <div class="command-bar-kbd">
+        <span class="kbd">⌘</span>
+        <span class="kbd">K</span>
+      </div>
+    </div>
+
+    <!-- Floating context cards -->
+    <div class="floating-cards">
+      <div class="float-card float-card-1">
+        <div class="float-card-label">Invoice sent</div>
+        <div class="float-card-value" style="color:var(--emerald);">$4,200 · Velvet &amp; Co</div>
+      </div>
+      <div class="float-card float-card-2">
+        <div class="float-card-label">Timer running</div>
+        <div class="float-card-value" style="color:var(--indigo-2);">01:24:37 · Nexus Corp</div>
+      </div>
+      <div class="float-card float-card-3">
+        <div class="float-card-label">Proposal accepted</div>
+        <div class="float-card-value" style="color:var(--amber);">$12,000 · TechFlow</div>
+      </div>
+      <div class="float-card float-card-4">
+        <div class="float-card-label">Revenue this month</div>
+        <div class="float-card-value" style="color:var(--ice);">$24,680 ↑12.5%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-social-proof">
+    <div class="hero-avatars">
+      <div class="hero-avatar" style="background:#3D33C8;color:#fff;">AK</div>
+      <div class="hero-avatar" style="background:#0F6E56;color:#fff;">JO</div>
+      <div class="hero-avatar" style="background:#993556;color:#fff;">LC</div>
+      <div class="hero-avatar" style="background:#534AB7;color:#fff;">MT</div>
+      <div class="hero-avatar" style="background:#854F0B;color:#fff;">+</div>
+    </div>
+    <span class="hero-stars">★★★★★</span>
+    <span>Loved by <strong style="color:var(--ice-2);">3,200+</strong> freelancers worldwide</span>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="container">
+    <div class="trust-bar-inner">
+      <div class="trust-item">
+        <div class="trust-icon">🔒</div>
+        Bank-grade encryption
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">⚡</div>
+        Works offline too
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🌍</div>
+        Multi-currency &amp; VAT
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">📤</div>
+        Export to PDF, CSV, Xero
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🛡️</div>
+        SOC 2 Type II compliant
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM SECTION — Koray Pillar: "Why freelancers lose money" -->
+<section class="problem">
+  <div class="container">
+    <div class="container--narrow" style="margin-bottom:64px;padding:0;">
+      <div class="section-eyebrow reveal">
+        <div class="section-eyebrow-line"></div>
+        The problem
+      </div>
+      <h2 class="section-title reveal">
+        Admin is killing your <em>hourly rate</em>
+      </h2>
+      <p class="section-sub reveal">
+        Freelancers collectively lose billions each year not to bad clients or slow markets — but to the invisible tax of fragmented tooling, unpaid invoices, and forgotten hours. Clientli was built to close that gap.
+      </p>
+    </div>
+
+    <div class="problem-grid reveal">
+      <div class="problem-stat">
+        <div class="problem-stat-number red">11h</div>
+        <div class="problem-stat-label">Lost per week on admin tasks</div>
+        <div class="problem-stat-sub">The average freelancer spends 11 hours weekly on non-billable administration — chasing invoices, switching between apps, and manually updating project status.</div>
+      </div>
+      <div class="problem-stat">
+        <div class="problem-stat-number amber">$6,200</div>
+        <div class="problem-stat-label">In unpaid invoices outstanding</div>
+        <div class="problem-stat-sub">Most independent professionals carry an average of $6,200 in outstanding invoices at any given time. Late payments are systemic — not exceptional.</div>
+      </div>
+      <div class="problem-stat">
+        <div class="problem-stat-number green">23%</div>
+        <div class="problem-stat-label">Of billable hours go untracked</div>
+        <div class="problem-stat-sub">Without automated time capture, nearly a quarter of client-billable work is never invoiced. That's thousands of dollars left on the table every year.</div>
+      </div>
+      <div class="problem-stat">
+        <div class="problem-stat-number indigo">7</div>
+        <div class="problem-stat-label">Separate tools the average freelancer juggles</div>
+        <div class="problem-stat-sub">Calendly, Notion, Wave, Toggl, DocuSign, Stripe, Gmail. Context switching between seven tools isn't a workflow — it's a liability.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS BAR -->
+<div class="metrics-bar">
+  <div class="container">
+    <div class="metrics-inner reveal">
+      <div class="metric">
+        <div class="metric-val" style="color:var(--indigo-2);">$2.4M</div>
+        <div class="metric-label">Invoiced through Clientli this month</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:var(--emerald);">98.2%</div>
+        <div class="metric-label">Invoice collection rate (vs 72% industry avg)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:var(--amber);">4.8 hrs</div>
+        <div class="metric-label">Average admin time saved per week</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:var(--ice);">3,200+</div>
+        <div class="metric-label">Active freelancers on the platform</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES — Koray Cluster Pages mapped to feature cards -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="features-intro">
+      <div class="section-eyebrow reveal">
+        <div class="section-eyebrow-line"></div>
+        Everything you need
+      </div>
+      <h2 class="section-title reveal">
+        One OS. Every tool<br>your business runs on.
+      </h2>
+      <p class="section-sub reveal" style="margin:0 auto;">
+        Clientli replaces seven fragmented tools with one tightly integrated system — where your time tracking informs your invoicing, your proposals connect to your contracts, and your analytics show you what actually matters.
+      </p>
+    </div>
+
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(91,79,233,0.12);border:1px solid rgba(91,79,233,0.2);">📊</div>
+        <div class="feature-title">Smart Invoicing</div>
+        <div class="feature-desc">Generate polished invoices in seconds. Auto-populate from tracked time and project milestones. Send, track, and follow up — all without leaving your workspace.</div>
+        <div class="feature-tag-list">
+          <span class="feature-tag">Recurring billing</span>
+          <span class="feature-tag">Stripe integration</span>
+          <span class="feature-tag">Auto-reminders</span>
+          <span class="feature-tag">Multi-currency</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.2);">⏱️</div>
+        <div class="feature-title">Time Tracking</div>
+        <div class="feature-desc">One-click timers tied to specific projects and clients. Automatic billable hour calculation. Weekly summaries that feed directly into your next invoice with zero manual entry.</div>
+        <div class="feature-tag-list">
+          <span class="feature-tag">Project-linked timers</span>
+          <span class="feature-tag">Billable vs non-billable</span>
+          <span class="feature-tag">Weekly goals</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(240,168,67,0.1);border:1px solid rgba(240,168,67,0.2);">📄</div>
+        <div class="feature-title">Proposals & Contracts</div>
+        <div class="feature-desc">Send conversion-optimised proposals and legally sound contracts from a single view. Track open rates, get e-signatures, and move deals forward without a second app.</div>
+        <div class="feature-tag-list">
+          <span class="feature-tag">E-signature built in</span>
+          <span class="feature-tag">Open tracking</span>
+          <span class="feature-tag">Template library</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(240,107,138,0.1);border:1px solid rgba(240,107,138,0.2);">👥</div>
+        <div class="feature-title">Client Management</div>
+        <div class="feature-desc">A CRM built for how freelancers actually work. Full client history, project timelines, communication log, and revenue attribution — all in one clean profile view.</div>
+        <div class="feature-tag-list">
+          <span class="feature-tag">Full project history</span>
+          <span class="feature-tag">Revenue by client</span>
+          <span class="feature-tag">Lead pipeline</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(91,79,233,0.12);border:1px solid rgba(91,79,233,0.2);">📈</div>
+        <div class="feature-title">Revenue Analytics</div>
+        <div class="feature-desc">Know exactly where your money comes from, which clients are most profitable, and where your time is actually going. Make pricing and capacity decisions with real data.</div>
+        <div class="feature-tag-list">
+          <span class="feature-tag">Profitability per project</span>
+          <span class="feature-tag">Income forecasting</span>
+          <span class="feature-tag">Client LTV</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.2);">📅</div>
+        <div class="feature-title">Project Scheduling</div>
+        <div class="feature-desc">Deadline tracking, milestone management, and calendar integration that keeps every active project visible at a glance. Never miss a delivery date or a follow-up again.</div>
+        <div class="feature-tag-list">
+          <span class="feature-tag">Calendar sync</span>
+          <span class="feature-tag">Deadline alerts</span>
+          <span class="feature-tag">Milestone tracking</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS — Koray QDH cluster: "How do freelancers manage clients professionally?" -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-eyebrow reveal">
+      <div class="section-eyebrow-line"></div>
+      How Clientli works
+    </div>
+    <h2 class="section-title reveal">Set up in minutes.<br>Run your business in one place.</h2>
+
+    <div class="how-layout" style="margin-top:56px;">
+      <div class="how-steps reveal">
+
+        <div class="how-step active" onclick="setStep(0, this)">
+          <div class="how-step-num">1</div>
+          <div class="how-step-content">
+            <div class="how-step-title">Add your clients and active projects</div>
+            <div class="how-step-desc">Import from CSV or add manually. Clientli creates a full profile for each client — linking their projects, invoices, contracts, and communication history in one view from day one.</div>
+          </div>
+        </div>
+
+        <div class="how-step" onclick="setStep(1, this)">
+          <div class="how-step-num">2</div>
+          <div class="how-step-content">
+            <div class="how-step-title">Track time and assign it to projects</div>
+            <div class="how-step-desc">Start a timer from any project view. Clientli logs every session, marks it as billable or non-billable, and accumulates hours automatically — ready to pull directly into an invoice.</div>
+          </div>
+        </div>
+
+        <div class="how-step" onclick="setStep(2, this)">
+          <div class="how-step-num">3</div>
+          <div class="how-step-content">
+            <div class="how-step-title">Send invoices built from your tracked time</div>
+            <div class="how-step-desc">One click generates a polished invoice pre-populated with tracked hours, project milestones, and your payment terms. Send via Stripe, PayPal, or bank transfer — and let auto-reminders handle the rest.</div>
+          </div>
+        </div>
+
+        <div class="how-step" onclick="setStep(3, this)">
+          <div class="how-step-num">4</div>
+          <div class="how-step-content">
+            <div class="how-step-title">Watch your analytics update in real time</div>
+            <div class="how-step-desc">Revenue charts, profitability breakdowns, client lifetime value, and time utilisation — all updating live as payments arrive and projects progress. Know your business at a glance every single morning.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="how-visual reveal" id="howVisual">
+        <div class="how-visual-inner">
+
+          <!-- Panel 0: Clients -->
+          <div class="how-panel active" id="panel-0">
+            <div class="mini-topbar">
+              <div class="mini-dot" style="background:#FF5F57;"></div>
+              <div class="mini-dot" style="background:#FEBC2E;"></div>
+              <div class="mini-dot" style="background:#28C840;"></div>
+              <div class="mini-tab" style="margin-left:8px;">Clients</div>
+            </div>
+            <div class="mini-body">
+              <div class="mini-row">
+                <div class="mini-avatar" style="background:rgba(91,79,233,0.2);color:var(--indigo-2);">SM</div>
+                <div class="mini-label">Sarah Mitchell · Nexus Corp</div>
+                <div class="mini-value" style="color:var(--emerald);">$12,800</div>
+                <div class="mini-badge" style="background:rgba(45,212,160,0.12);color:var(--emerald);">Active</div>
+              </div>
+              <div class="mini-row">
+                <div class="mini-avatar" style="background:rgba(45,212,160,0.15);color:var(--emerald);">JO</div>
+                <div class="mini-label">James O'Brien · Velvet &amp; Co</div>
+                <div class="mini-value" style="color:var(--emerald);">$8,400</div>
+                <div class="mini-badge" style="background:rgba(45,212,160,0.12);color:var(--emerald);">Active</div>
+              </div>
+              <div class="mini-row">
+                <div class="mini-avatar" style="background:rgba(96,165,250,0.15);color:#60A5FA;">LC</div>
+                <div class="mini-label">Lisa Chen · TechFlow</div>
+                <div class="mini-value" style="color:var(--emerald);">$7,200</div>
+                <div class="mini-badge" style="background:rgba(45,212,160,0.12);color:var(--emerald);">Active</div>
+              </div>
+              <div class="mini-row">
+                <div class="mini-avatar" style="background:rgba(240,168,67,0.15);color:var(--amber);">NP</div>
+                <div class="mini-label">Nina Patel · Zenith Labs</div>
+                <div class="mini-value" style="color:var(--amber);">Lead</div>
+                <div class="mini-badge" style="background:rgba(240,168,67,0.12);color:var(--amber);">Proposal sent</div>
+              </div>
+              <div class="mini-stat-row">
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--indigo-2);">12</div>
+                  <div class="mini-stat-lbl">Total clients</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--emerald);">$45.6k</div>
+                  <div class="mini-stat-lbl">Lifetime revenue</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--amber);">84%</div>
+                  <div class="mini-stat-lbl">Retention rate</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 1: Timer -->
+          <div class="how-panel" id="panel-1">
+            <div class="mini-topbar">
+              <div class="mini-dot" style="background:#FF5F57;"></div>
+              <div class="mini-dot" style="background:#FEBC2E;"></div>
+              <div class="mini-dot" style="background:#28C840;"></div>
+              <div class="mini-tab" style="margin-left:8px;">Time Tracking</div>
+            </div>
+            <div class="mini-body">
+              <div class="timer-display" id="miniTimer">01:24:37</div>
+              <div style="text-align:center;font-size:11px;color:var(--slate);margin-bottom:16px;">Brand Redesign — Nexus Corp</div>
+              <div class="mini-progress-list">
+                <div class="mini-progress-item">
+                  <div class="mini-progress-header"><span>Nexus Corp</span><span style="color:var(--emerald);">4h 15m</span></div>
+                  <div class="mini-progress-bar"><div class="mini-progress-fill" style="width:72%;background:var(--indigo);"></div></div>
+                </div>
+                <div class="mini-progress-item">
+                  <div class="mini-progress-header"><span>Velvet &amp; Co</span><span style="color:var(--amber);">1h 45m</span></div>
+                  <div class="mini-progress-bar"><div class="mini-progress-fill" style="width:45%;background:var(--emerald);"></div></div>
+                </div>
+                <div class="mini-progress-item">
+                  <div class="mini-progress-header"><span>DataPulse</span><span>1h 24m</span></div>
+                  <div class="mini-progress-bar"><div class="mini-progress-fill" style="width:33%;background:var(--amber);"></div></div>
+                </div>
+              </div>
+              <div class="mini-stat-row" style="margin-top:14px;">
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--ice);">7h 24m</div>
+                  <div class="mini-stat-lbl">Today</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--emerald);">$742</div>
+                  <div class="mini-stat-lbl">Billable value</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--indigo-2);">93%</div>
+                  <div class="mini-stat-lbl">Billable rate</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 2: Invoice -->
+          <div class="how-panel" id="panel-2">
+            <div class="mini-topbar">
+              <div class="mini-dot" style="background:#FF5F57;"></div>
+              <div class="mini-dot" style="background:#FEBC2E;"></div>
+              <div class="mini-dot" style="background:#28C840;"></div>
+              <div class="mini-tab" style="margin-left:8px;">Invoices</div>
+            </div>
+            <div class="mini-body">
+              <div class="mini-row" style="justify-content:space-between;">
+                <div style="font-size:11px;font-weight:600;color:var(--indigo-2);">INV-011</div>
+                <div style="font-size:11px;color:var(--slate);">Nexus Corp · Due Feb 15</div>
+                <div class="mini-badge" style="background:rgba(45,212,160,0.12);color:var(--emerald);">Paid</div>
+              </div>
+              <div class="mini-row" style="justify-content:space-between;">
+                <div style="font-size:11px;font-weight:600;color:var(--indigo-2);">INV-012</div>
+                <div style="font-size:11px;color:var(--slate);">Velvet &amp; Co · Due Feb 18</div>
+                <div class="mini-badge" style="background:rgba(251,191,36,0.12);color:var(--amber);">Pending</div>
+              </div>
+              <div class="mini-row" style="justify-content:space-between;">
+                <div style="font-size:11px;font-weight:600;color:var(--indigo-2);">INV-013</div>
+                <div style="font-size:11px;color:var(--slate);">TechFlow · Due Mar 1</div>
+                <div class="mini-badge" style="background:rgba(251,191,36,0.12);color:var(--amber);">Pending</div>
+              </div>
+              <div class="mini-row" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);justify-content:space-between;">
+                <div style="font-size:11px;font-weight:600;color:#F06B8A;">INV-008</div>
+                <div style="font-size:11px;color:var(--slate);">Nexus Corp · Overdue</div>
+                <div class="mini-badge" style="background:rgba(239,68,68,0.12);color:#F06B8A;">Overdue</div>
+              </div>
+              <div class="mini-stat-row" style="margin-top:10px;">
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--emerald);">$18.2k</div>
+                  <div class="mini-stat-lbl">Collected</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--amber);">$8.4k</div>
+                  <div class="mini-stat-lbl">Pending</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:#F06B8A;">$2.1k</div>
+                  <div class="mini-stat-lbl">Overdue</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 3: Analytics -->
+          <div class="how-panel" id="panel-3">
+            <div class="mini-topbar">
+              <div class="mini-dot" style="background:#FF5F57;"></div>
+              <div class="mini-dot" style="background:#FEBC2E;"></div>
+              <div class="mini-dot" style="background:#28C840;"></div>
+              <div class="mini-tab" style="margin-left:8px;">Analytics</div>
+            </div>
+            <div class="mini-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div>
+                  <div style="font-size:10px;color:var(--slate);">Revenue this month</div>
+                  <div style="font-family:'Instrument Serif',Georgia,serif;font-size:26px;font-weight:400;letter-spacing:-0.02em;color:#818CF8;">$24,680</div>
+                </div>
+                <div style="font-size:11px;color:var(--emerald);font-weight:600;">↑ 12.5% vs last month</div>
+              </div>
+              <!-- Mini bar chart -->
+              <div style="display:flex;align-items:flex-end;gap:5px;height:60px;margin-bottom:14px;">
+                <div style="flex:1;height:45%;background:rgba(91,79,233,0.3);border-radius:3px 3px 0 0;"></div>
+                <div style="flex:1;height:55%;background:rgba(91,79,233,0.35);border-radius:3px 3px 0 0;"></div>
+                <div style="flex:1;height:65%;background:rgba(91,79,233,0.4);border-radius:3px 3px 0 0;"></div>
+                <div style="flex:1;height:72%;background:rgba(91,79,233,0.45);border-radius:3px 3px 0 0;"></div>
+                <div style="flex:1;height:68%;background:rgba(91,79,233,0.4);border-radius:3px 3px 0 0;"></div>
+                <div style="flex:1;height:100%;background:var(--indigo);border-radius:3px 3px 0 0;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--slate-2);margin-bottom:14px;padding:0 2px;">
+                <span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
+              </div>
+              <div class="mini-stat-row">
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--amber);">$3.5k</div>
+                  <div class="mini-stat-lbl">Avg project</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--emerald);">68%</div>
+                  <div class="mini-stat-lbl">Win rate</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-val" style="color:var(--ice);">$100/h</div>
+                  <div class="mini-stat-lbl">Effective rate</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS — Koray E-E-A-T signals -->
+<section id="testimonials">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:64px;">
+      <div class="section-eyebrow reveal" style="justify-content:center;">
+        <div class="section-eyebrow-line"></div>
+        Real freelancers, real results
+        <div class="section-eyebrow-line"></div>
+      </div>
+      <h2 class="section-title reveal">What independent professionals say<br>after 90 days with Clientli</h2>
+    </div>
+
+    <div class="testimonials-grid reveal">
+
+      <div class="testimonial-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">Before Clientli, I was losing track of time across five projects at once. I estimated I was leaving about <strong>$1,200 a month</strong> on the table in untracked hours. The first month I used the timer properly, I invoiced for $1,400 more than the month before.</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(91,79,233,0.2);color:var(--indigo-2);">AK</div>
+          <div>
+            <div class="testi-name">Alex Kovacs</div>
+            <div class="testi-role">Product Designer · Berlin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">I used to dread proposal season. Now I <strong>genuinely enjoy it</strong>. Having my past project data in one place means I can price confidently and write scopes that actually reflect the work.</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(45,212,160,0.15);color:var(--emerald);">SM</div>
+          <div>
+            <div class="testi-name">Sara Moreno</div>
+            <div class="testi-role">Brand Strategist · Barcelona</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">The invoice auto-reminder feature alone is worth every penny. I've reduced my average payment time from <strong>47 days to 9 days</strong>. Cash flow anxiety? Gone.</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(240,168,67,0.15);color:var(--amber);">JH</div>
+          <div>
+            <div class="testi-name">James Hughes</div>
+            <div class="testi-role">Full-Stack Developer · London</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">Switching from Toggl + Wave + Notion to Clientli felt like going from a pile of Post-its to an actual office. <strong>Everything is connected</strong>. When a project closes, my invoice is basically already written.</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(240,107,138,0.15);color:var(--rose);">LP</div>
+          <div>
+            <div class="testi-name">Léa Petit</div>
+            <div class="testi-role">UX Researcher · Paris</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">As a consultant working with 8 to 12 clients at a time, client management was chaos. Clientli gave me something I didn't know I needed: <strong>a single place to see who owes what, what's due when, and who to follow up with today.</strong></p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(96,165,250,0.15);color:#60A5FA;">TC</div>
+          <div>
+            <div class="testi-name">Tomás Cruz</div>
+            <div class="testi-role">Strategy Consultant · São Paulo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">I raised my rates by 20% after three months with Clientli because I finally had the data to back it up. I could see my <strong>effective hourly rate, my most profitable clients</strong>, and exactly where I was undercharging.</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(167,139,250,0.15);color:#A78BFA;">PW</div>
+          <div>
+            <div class="testi-name">Priya Williams</div>
+            <div class="testi-role">Copywriter &amp; Content Strategist · Toronto</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PRICING — Koray QDP: "Best freelance invoicing software pricing" -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-eyebrow reveal" style="justify-content:center;">
+        <div class="section-eyebrow-line"></div>
+        Simple pricing
+        <div class="section-eyebrow-line"></div>
+      </div>
+      <h2 class="section-title reveal">Start free. Grow into it.</h2>
+      <p class="section-sub reveal" style="margin:0 auto 0;">
+        No contracts. No per-invoice fees. No surprise charges when a client pays. Every plan includes a 14-day trial of Pro features.
+      </p>
+    </div>
+
+    <div class="pricing-grid reveal">
+
+      <div class="pricing-card">
+        <div class="pricing-plan">Starter</div>
+        <div class="pricing-price"><sup>$</sup>0</div>
+        <div class="pricing-cycle">Free forever · No card required</div>
+        <div class="pricing-desc">Everything you need to get your first clients paid on time.</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Up to 3 active projects</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>5 invoices per month</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Time tracking (unlimited)</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Basic client profiles</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>PDF invoice export</li>
+        </ul>
+        <a href="app.html" class="btn btn-outline" style="width:100%;justify-content:center;padding:13px;">Get started free</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most popular</div>
+        <div class="pricing-plan">Pro</div>
+        <div class="pricing-price"><sup>$</sup>19</div>
+        <div class="pricing-cycle">per month, billed monthly · or $15/mo annually</div>
+        <div class="pricing-desc">The full Clientli experience for freelancers who are serious about growth.</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Unlimited projects &amp; clients</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Unlimited invoices with auto-reminders</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Proposals &amp; e-signature contracts</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Revenue analytics &amp; forecasting</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Stripe &amp; PayPal integration</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Recurring billing &amp; retainers</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Priority support</li>
+        </ul>
+        <a href="app.html" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px;">Start 14-day free trial</a>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-plan">Studio</div>
+        <div class="pricing-price"><sup>$</sup>49</div>
+        <div class="pricing-cycle">per month · up to 5 team members</div>
+        <div class="pricing-desc">For small agencies and freelance studios managing teams and shared clients.</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Everything in Pro</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>5 team seats included</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Shared client &amp; project workspace</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Team time tracking &amp; reports</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>White-label invoice branding</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Xero &amp; QuickBooks sync</li>
+          <li class="pricing-feature"><div class="pricing-check">✓</div>Dedicated onboarding</li>
+        </ul>
+        <a href="app.html" class="btn btn-outline" style="width:100%;justify-content:center;padding:13px;">Contact sales</a>
+      </div>
+
+    </div>
+
+    <p style="text-align:center;font-size:11px;color:var(--slate);margin-top:28px;letter-spacing:0.01em;">All plans include a 30-day money-back guarantee. We don't take a cut of your invoices. Ever.</p>
+  </div>
+</section>
+
+<!-- FAQ — Koray QDH content cluster -->
+<section id="faq">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:12px;">
+      <div class="section-eyebrow reveal" style="justify-content:center;">
+        <div class="section-eyebrow-line"></div>
+        Common questions
+        <div class="section-eyebrow-line"></div>
+      </div>
+      <h2 class="section-title reveal">Everything you want to know<br>before you start</h2>
+    </div>
+
+    <div class="faq-list reveal">
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          How is Clientli different from FreshBooks, Wave, or Harvest?
+          <div class="faq-icon">+</div>
+        </button>
+        <div class="faq-a">
+          <p>FreshBooks and Wave are primarily accounting tools. Harvest is a time tracker. None of them treat the full freelance workflow — from proposal to contract to time-tracking to invoicing to analytics — as a connected system. Clientli was designed from the ground up for independent professionals who need a single command center, not another accounting add-on. You also never pay per-invoice or per-seat fees on Pro.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Can I import my existing clients and invoices?
+          <div class="faq-icon">+</div>
+        </button>
+        <div class="faq-a">
+          <p>Yes. Clientli supports CSV import for clients, projects, and invoice history. If you're migrating from FreshBooks, Wave, Harvest, or Toggl, we have dedicated import guides that walk you through the process in under 20 minutes. Your historical data stays yours — you can also export everything at any time.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Does Clientli take a percentage of my invoices?
+          <div class="faq-icon">+</div>
+        </button>
+        <div class="faq-a">
+          <p>Never. You pay a flat monthly or annual subscription — Clientli does not take a cut of your earnings at any tier. Payment processing fees (charged by Stripe or PayPal) are the only transaction-level costs, and those go directly to the payment processor, not to us.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          How does the time tracking connect to invoicing?
+          <div class="faq-icon">+</div>
+        </button>
+        <div class="faq-a">
+          <p>When you close out a billing period, Clientli pulls all logged billable hours for a client, applies your hourly rate (or project-level overrides), and pre-populates a ready-to-send invoice. You review, adjust if needed, and send — no manual data entry, no spreadsheet in between. Time entries can also be attached as line-item detail for full transparency with clients.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Is there a mobile app?
+          <div class="faq-icon">+</div>
+        </button>
+        <div class="faq-a">
+          <p>Clientli's desktop app runs on Linux, macOS, and Windows. A companion mobile app for iOS and Android is in active development and expected in Q2 2025 — early access is available to Pro subscribers. The web version is fully mobile-responsive and works on any device browser today.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          What happens to my data if I cancel?
+          <div class="faq-icon">+</div>
+        </button>
+        <div class="faq-a">
+          <p>Your data belongs to you. If you cancel, you have 30 days to export everything — clients, projects, invoices, contracts, time entries — in CSV or PDF format. We don't delete your data immediately; you'll receive export reminders before any data is removed. We also offer a read-only archive mode for 12 months post-cancellation on request.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="container">
+    <div class="cta-box reveal">
+      <div class="cta-glow"></div>
+      <h2 class="cta-title">Stop leaving money<br>on the table</h2>
+      <p class="cta-sub">Join 3,200+ freelancers who use Clientli to invoice faster, track every hour, and run their business like a business. Free to start. Takes 4 minutes to set up.</p>
+      <div class="cta-form">
+        <input class="cta-input" type="email" placeholder="your@email.com" id="ctaEmail">
+        <button class="btn btn-primary" onclick="handleSignup()">Get early access →</button>
+      </div>
+      <p class="cta-note">Free forever on Starter. No credit card required. No spam — ever.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-mark">⚡</div>
+          Clientli
+        </div>
+        <p>The freelancer OS built for independent professionals who take their business seriously.</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-col-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="index.html#pricing">Pricing</a></li>
+            <li><a href="#">Changelog</a></li>
+            <li><a href="#">Roadmap</a></li>
+            <li><a href="#">Desktop app</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-col-links">
+            <li><a href="freelancer-guide.html">Freelancer guide</a></li>
+            <li><a href="blog.html">Invoice templates</a></li>
+            <li><a href="blog.html">Proposal templates</a></li>
+            <li><a href="app.html">Help centre</a></li>
+            <li><a href="#">API docs</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <ul class="footer-col-links">
+            <li><a href="about.html">About</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="#">Privacy policy</a></li>
+            <li><a href="#">Terms of service</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 Clientli. All rights reserved.</span>
+      <span>Made with care for freelancers everywhere 🌍</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ---- NAV SCROLL ---- */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 30);
+});
+
+/* ---- MOBILE NAV TOGGLE ---- */
+function toggleMobileNav() {
+  const mob = document.getElementById('mobileNav');
+  const btn = document.getElementById('navToggle');
+  const open = mob.style.display === 'none';
+  mob.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '✕' : '☰';
+  btn.style.borderColor = open ? 'rgba(99,102,241,0.4)' : 'var(--border2)';
+}
+// Close mobile nav on outside click
+document.addEventListener('click', e => {
+  const mob = document.getElementById('mobileNav');
+  const btn = document.getElementById('navToggle');
+  if(mob && mob.style.display !== 'none' && !mob.contains(e.target) && !btn.contains(e.target) && !nav.contains(e.target)) {
+    mob.style.display = 'none';
+    btn.textContent = '☰';
+  }
+});
+
+/* ---- REVEAL ON SCROLL ---- */
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 60);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => observer.observe(el));
+
+/* ---- COMMAND BAR TYPEWRITER ---- */
+const phrases = [
+  'Create invoice for Nexus Corp — $2,600',
+  'Start timer on E-Commerce Platform',
+  'Send proposal to Artisan Media — $4,500',
+  'Show revenue for January 2025',
+  'Mark INV-007 as paid',
+  'Schedule follow-up with Lisa Chen',
+];
+let phraseIdx = 0, charIdx = 0, deleting = false;
+const input = document.getElementById('cmdInput');
+
+function typeWriter() {
+  const phrase = phrases[phraseIdx];
+  if (!deleting) {
+    input.value = phrase.slice(0, charIdx + 1);
+    charIdx++;
+    if (charIdx === phrase.length) {
+      deleting = true;
+      setTimeout(typeWriter, 1800);
+      return;
+    }
+    setTimeout(typeWriter, 48);
+  } else {
+    input.value = phrase.slice(0, charIdx - 1);
+    charIdx--;
+    if (charIdx === 0) {
+      deleting = false;
+      phraseIdx = (phraseIdx + 1) % phrases.length;
+      setTimeout(typeWriter, 400);
+      return;
+    }
+    setTimeout(typeWriter, 22);
+  }
+}
+setTimeout(typeWriter, 800);
+
+/* ---- HOW IT WORKS STEPS ---- */
+function setStep(idx, el) {
+  document.querySelectorAll('.how-step').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.how-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+}
+
+/* ---- MINI TIMER TICK ---- */
+let timerSecs = 5077;
+setInterval(() => {
+  timerSecs++;
+  const h = String(Math.floor(timerSecs / 3600)).padStart(2,'0');
+  const m = String(Math.floor((timerSecs % 3600) / 60)).padStart(2,'0');
+  const s = String(timerSecs % 60).padStart(2,'0');
+  const el = document.getElementById('miniTimer');
+  if (el) el.textContent = h + ':' + m + ':' + s;
+}, 1000);
+
+/* ---- FAQ ---- */
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+/* ---- SIGNUP ---- */
+function handleSignup() {
+  const email = document.getElementById('ctaEmail').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('ctaEmail').style.borderColor = 'rgba(240,107,138,0.5)';
+    setTimeout(() => { document.getElementById('ctaEmail').style.borderColor = ''; }, 2000);
+    return;
+  }
+  const btn = event.target;
+  btn.textContent = '✓ Taking you to your dashboard...';
+  btn.style.background = 'var(--emerald)';
+  btn.style.color = 'var(--navy)';
+  btn.disabled = true;
+  // Pre-fill the registration email in the app and redirect
+  setTimeout(() => { window.location.href = 'app.html?email=' + encodeURIComponent(email); }, 900);
+}
+
+</script>
+</body>
+</html>

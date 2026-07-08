@@ -1,0 +1,10 @@
+# worker/.dev.vars
+# This file is used by `wrangler dev` for LOCAL testing only.
+# It is gitignored — NEVER commit real keys.
+# Copy this file, rename to .dev.vars, fill in your real values.
+
+DEEPSEEK_API_KEY=sk-your-deepseek-key-here
+FIREBASE_WEB_API_KEY=AIzaSy-your-firebase-web-api-key
+FIREBASE_PROJECT_ID=your-project-id
+STRIPE_SECRET_KEY=sk_test_your-stripe-test-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret

@@ -1,0 +1,10 @@
+# Cloudflare Pages _redirects
+# SPA-style fallbacks and friendly redirects
+
+/dashboard    /app.html    301
+/login        /app.html    301
+/register     /app.html    301
+/signin       /app.html    301
+
+# 404 fallback
+/*            /404.html    404

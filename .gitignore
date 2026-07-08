@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Wrangler local dev
+worker/.wrangler/
+worker/node_modules/
+worker/.dev.vars
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Local env files — NEVER commit these
+.env
+.env.local
+.env.production
+
+# Editor
+.vscode/
+.idea/
+*.swp

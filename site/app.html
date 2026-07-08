@@ -1,0 +1,3148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clientli — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Firebase v10 SDK (modular via CDN compat build) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<!-- Stripe.js -->
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PRODUCTION CONFIG — replace with your actual values
+// Get these from: Firebase Console → Project Settings → Your Apps
+// ═══════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_FIREBASE_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID",
+};
+
+// Cloudflare Worker URL — after you deploy the worker
+const WORKER_URL = "https://clientli-api.YOUR_SUBDOMAIN.workers.dev";
+
+// Stripe publishable key (safe to expose in frontend)
+// Get from: Stripe Dashboard → Developers → API Keys
+const STRIPE_PUBLISHABLE_KEY = "pk_live_YOUR_STRIPE_PUBLISHABLE_KEY";
+
+// Stripe Price IDs — from Stripe Dashboard → Products
+const STRIPE_PRICES = {
+  pro_monthly:  "price_YOUR_PRO_MONTHLY_ID",
+  pro_annual:   "price_YOUR_PRO_ANNUAL_ID",
+  studio:       "price_YOUR_STUDIO_ID",
+};
+
+// Plan limits
+const PLAN_LIMITS = {
+  starter: { projects: 3,  invoices: 5,  aiRequests: 0,  label: 'Starter' },
+  pro:     { projects: -1, invoices: -1, aiRequests: -1, label: 'Pro'     },
+  studio:  { projects: -1, invoices: -1, aiRequests: -1, label: 'Studio'  },
+};
+
+// ── Dev mode: AUTO-DETECTED — true if Firebase config is still placeholder
+// You do NOT need to change this manually.
+// Just fill in your real values above and DEV_MODE becomes false automatically.
+const DEV_MODE = FIREBASE_CONFIG.apiKey === "YOUR_FIREBASE_API_KEY" ||
+                 WORKER_URL.includes("YOUR_SUBDOMAIN");
+
+if(DEV_MODE) {
+  console.log('ℹ️  DEV_MODE active — fill in config values above to switch to production');
+} else {
+  console.log('✓ Production mode — Firebase + DeepSeek + Stripe active');
+}
+
+// ── Init Firebase (only when not in dev mode)
+let db = null, auth = null;
+if (!DEV_MODE && FIREBASE_CONFIG.apiKey !== "YOUR_FIREBASE_API_KEY") {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+  console.log('✓ Firebase initialised');
+} else {
+  console.log('ℹ Running in DEV_MODE — using localStorage');
+}
+</script>
+<style>
+:root {
+  --bg:       #060914;
+  --bg2:      #0A0E1C;
+  --bg3:      #0F1424;
+  --bg4:      #141929;
+  --indigo:   #4F46E5;
+  --indigo2:  #6366F1;
+  --indigo3:  #818CF8;
+  --emerald:  #10B981;
+  --amber:    #F59E0B;
+  --rose:     #F43F5E;
+  --violet:   #8B5CF6;
+  --sky:      #0EA5E9;
+  --ice:      #F8F8FC;
+  --ice2:     #BFC3D9;
+  --slate:    #7B7F96;
+  --slate2:   #484C63;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.11);
+  --border3:  rgba(255,255,255,0.18);
+  --shadow:   0 4px 24px rgba(0,0,0,0.4);
+  --radius:   10px;
+  --radiuslg: 14px;
+  --radiusxl: 20px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ice);-webkit-font-smoothing:antialiased;overflow:hidden;}
+h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-0.025em;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--slate2);border-radius:2px;}
+
+/* ── AUTH SCREEN ── */
+#authScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
+#authScreen::before{content:'';position:absolute;width:700px;height:500px;background:radial-gradient(ellipse,rgba(79,70,229,0.15) 0%,transparent 70%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none;}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radiusxl);padding:44px 48px;width:420px;position:relative;box-shadow:0 40px 100px rgba(0,0,0,0.6);}
+.auth-card::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),transparent);}
+.auth-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:18px;letter-spacing:-0.03em;margin-bottom:32px;}
+.auth-logo-mark{width:28px;height:28px;background:var(--indigo);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:28px;}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;color:var(--slate);transition:all 0.2s;}
+.auth-tab.active{background:var(--bg4);color:var(--ice);border:1px solid var(--border2);}
+.auth-form{display:flex;flex-direction:column;gap:14px;}
+.field-label{font-size:12px;font-weight:500;color:var(--slate);margin-bottom:5px;display:block;letter-spacing:0.01em;}
+.field-input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ice);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:rgba(99,102,241,0.5);}
+.field-input::placeholder{color:var(--slate2);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn-auth{width:100%;padding:12px;background:var(--indigo);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;margin-top:4px;letter-spacing:-0.01em;}
+.btn-auth:hover{background:var(--indigo2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,70,229,0.4);}
+.auth-divider{text-align:center;font-size:12px;color:var(--slate2);margin:4px 0;}
+.auth-error{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.25);border-radius:7px;padding:10px 14px;font-size:12px;color:#FB7185;display:none;}
+.auth-note{font-size:11px;color:var(--slate2);text-align:center;margin-top:16px;line-height:1.6;}
+
+/* ── APP SHELL ── */
+#appShell{display:none;height:100vh;flex-direction:row;}
+#appShell.visible{display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:232px;min-width:232px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.sidebar-logo{display:flex;align-items:center;gap:9px;padding:20px 18px 16px;font-weight:600;font-size:17px;letter-spacing:-0.03em;border-bottom:1px solid var(--border);}
+.sidebar-logo-mark{width:26px;height:26px;background:var(--indigo);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.sidebar-user{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-av{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--indigo),var(--violet));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;}
+.sidebar-uname{font-size:13px;font-weight:600;letter-spacing:-0.01em;}
+.sidebar-urole{font-size:11px;color:var(--slate);}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 8px;}
+.nav-section-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate2);padding:10px 10px 5px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--slate);cursor:pointer;transition:all 0.18s;font-size:13px;font-weight:500;margin-bottom:1px;letter-spacing:-0.01em;}
+.nav-item:hover{color:var(--ice2);background:rgba(255,255,255,0.04);}
+.nav-item.active{color:var(--ice);background:rgba(79,70,229,0.12);border:1px solid rgba(79,70,229,0.18);}
+.nav-item .ni{width:16px;text-align:center;font-size:14px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:rgba(245,158,11,0.15);color:var(--amber);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;}
+.sidebar-footer{padding:12px;border-top:1px solid var(--border);}
+.upgrade-box{background:linear-gradient(135deg,rgba(79,70,229,0.12),rgba(79,70,229,0.05));border:1px solid rgba(79,70,229,0.2);border-radius:var(--radius);padding:14px;}
+.upgrade-box h4{font-size:12px;color:var(--indigo3);margin-bottom:3px;}
+.upgrade-box p{font-size:11px;color:var(--slate);margin-bottom:10px;line-height:1.5;}
+.btn-upgrade{width:100%;padding:7px;background:var(--indigo);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all 0.2s;}
+.btn-upgrade:hover{background:var(--indigo2);}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0;background:rgba(6,9,20,0.8);backdrop-filter:blur(12px);}
+.topbar-title{font-size:16px;font-weight:700;letter-spacing:-0.02em;}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.content-area{flex:1;overflow-y:auto;padding:24px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'Inter',sans-serif;font-weight:500;font-size:13px;border-radius:var(--radius);cursor:pointer;transition:all 0.18s;border:none;letter-spacing:-0.01em;white-space:nowrap;}
+.btn-primary{padding:9px 18px;background:var(--indigo);color:#fff;}
+.btn-primary:hover{background:var(--indigo2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,70,229,0.4);}
+.btn-secondary{padding:8px 16px;background:rgba(255,255,255,0.06);color:var(--ice2);border:1px solid var(--border2);}
+.btn-secondary:hover{background:rgba(255,255,255,0.1);color:var(--ice);}
+.btn-ghost{padding:7px 12px;background:transparent;color:var(--slate);}
+.btn-ghost:hover{color:var(--ice2);background:rgba(255,255,255,0.05);}
+.btn-danger{padding:8px 16px;background:rgba(244,63,94,0.1);color:#FB7185;border:1px solid rgba(244,63,94,0.2);}
+.btn-danger:hover{background:rgba(244,63,94,0.2);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-icon{width:32px;height:32px;padding:0;}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radiuslg);overflow:hidden;}
+.card-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-header h3{font-size:14px;font-weight:600;letter-spacing:-0.02em;}
+.card-body{padding:20px;}
+
+/* ── STAT CARDS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radiuslg);padding:20px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.stat-card:hover{border-color:var(--border2);}
+.stat-card-top{height:2px;position:absolute;top:0;left:0;right:0;}
+.stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:14px;}
+.stat-val{font-family:'Instrument Serif',Georgia,serif;font-size:32px;font-weight:400;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;}
+.stat-label{font-size:12px;color:var(--slate);letter-spacing:-0.01em;}
+.stat-change{font-size:11px;font-weight:600;margin-top:6px;}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.01em;}
+.badge-success{background:rgba(16,185,129,0.1);color:#34D399;border:1px solid rgba(16,185,129,0.2);}
+.badge-warning{background:rgba(245,158,11,0.1);color:#FCD34D;border:1px solid rgba(245,158,11,0.2);}
+.badge-danger{background:rgba(244,63,94,0.1);color:#FB7185;border:1px solid rgba(244,63,94,0.2);}
+.badge-info{background:rgba(14,165,233,0.1);color:#38BDF8;border:1px solid rgba(14,165,233,0.2);}
+.badge-muted{background:rgba(255,255,255,0.05);color:var(--slate);border:1px solid var(--border);}
+.badge-indigo{background:rgba(79,70,229,0.1);color:var(--indigo3);border:1px solid rgba(79,70,229,0.2);}
+
+/* ── TABLE ── */
+.table{width:100%;border-collapse:collapse;}
+.table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border);background:var(--bg3);}
+.table td{padding:13px 14px;font-size:13px;border-bottom:1px solid var(--border);color:var(--ice2);}
+.table tr:hover td{background:rgba(255,255,255,0.02);}
+.table tr:last-child td{border-bottom:none;}
+.table td strong{color:var(--ice);font-weight:600;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);z-index:999;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radiusxl);padding:32px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,0.6);position:relative;}
+.modal-title{font-size:18px;font-weight:700;letter-spacing:-0.03em;margin-bottom:22px;}
+.modal-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.06);border:1px solid var(--border2);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--slate);font-size:14px;transition:all 0.2s;}
+.modal-close:hover{color:var(--ice);background:rgba(255,255,255,0.1);}
+.modal-form{display:flex;flex-direction:column;gap:14px;}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;}
+
+/* ── FORM FIELDS ── */
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:12px;font-weight:500;color:var(--slate);letter-spacing:0.01em;}
+.field input,.field select,.field textarea{padding:10px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ice);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(99,102,241,0.45);}
+.field input::placeholder,.field textarea::placeholder{color:var(--slate2);}
+.field select{appearance:none;cursor:pointer;}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5;}
+
+/* ── PROGRESS ── */
+.progress{height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.6s ease;}
+
+/* ── AVATAR ── */
+.av{border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Inter',sans-serif;flex-shrink:0;}
+
+/* ── TOAST ── */
+#toastContainer{position:fixed;top:18px;right:18px;z-index:99999;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:9px;animation:toastIn 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:260px;}
+.toast-success{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);color:#34D399;}
+.toast-error{background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.25);color:#FB7185;}
+.toast-info{background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);color:var(--indigo3);}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
+
+/* ── AI PANEL ── */
+.ai-panel{background:var(--bg3);border:1px solid rgba(99,102,241,0.2);border-radius:var(--radiuslg);padding:18px;margin-top:14px;}
+.ai-panel-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.ai-badge{background:linear-gradient(135deg,var(--indigo),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.ai-output{font-size:13px;color:var(--ice2);line-height:1.75;white-space:pre-wrap;}
+.ai-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate);}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--indigo2);animation:aiPulse 1.2s ease infinite;}
+.ai-dot:nth-child(2){animation-delay:0.2s;}
+.ai-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes aiPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1.2);}}
+
+/* ── TIMER ── */
+.timer-display{font-family:'Instrument Serif',Georgia,serif;font-size:52px;font-weight:400;letter-spacing:0.02em;text-align:center;background:linear-gradient(130deg,#818CF8,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;padding:10px 0;}
+
+/* ── GRID LAYOUTS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.grid-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+
+/* ── VIEWS ── */
+.view{display:none;}
+.view.active{display:block;}
+
+/* ── PROJECT CARD ── */
+.project-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radiuslg);padding:22px;transition:all 0.2s;cursor:pointer;}
+.project-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow);}
+.project-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px;}
+.project-card h4{font-size:14px;font-weight:600;letter-spacing:-0.02em;margin-bottom:3px;}
+.project-card-client{font-size:12px;color:var(--slate);margin-bottom:14px;}
+.project-card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);font-size:12px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-state-icon{font-size:42px;margin-bottom:14px;opacity:0.4;}
+.empty-state h3{font-size:16px;font-weight:600;margin-bottom:8px;color:var(--ice2);}
+.empty-state p{font-size:13px;color:var(--slate);margin-bottom:20px;line-height:1.6;}
+
+/* ── CALENDAR ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-day-header{text-align:center;font-size:11px;font-weight:600;color:var(--slate);padding:6px 0;text-transform:uppercase;letter-spacing:0.06em;}
+.cal-day{min-height:76px;border:1px solid var(--border);border-radius:8px;padding:8px;cursor:pointer;transition:background 0.15s;}
+.cal-day:hover{background:rgba(255,255,255,0.03);}
+.cal-day.today{border-color:rgba(79,70,229,0.4);background:rgba(79,70,229,0.06);}
+.cal-day.other-month{opacity:0.3;}
+.cal-day-num{font-size:12px;font-weight:600;margin-bottom:4px;}
+.cal-day.today .cal-day-num{color:var(--indigo3);}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
+
+/* ── CHART CONTAINER ── */
+.chart-wrap{position:relative;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="toastContainer"></div>
+
+<!-- ═══════════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════════ -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">⚡</div>
+      Clientli
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Sign in</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Create account</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-form">
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input class="field-input" type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label">Password</label>
+          <input class="field-input" type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn-auth" onclick="doLogin()">Sign in to Clientli →</button>
+      </div>
+      <p class="auth-note">Demo account: <strong>demo@clientli.app</strong> / <strong>demo1234</strong></p>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none;">
+      <div class="auth-error" id="regError"></div>
+      <div class="auth-form">
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">First name</label>
+            <input class="field-input" type="text" id="regFirst" placeholder="Alex">
+          </div>
+          <div class="field">
+            <label class="field-label">Last name</label>
+            <input class="field-input" type="text" id="regLast" placeholder="Kovacs">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input class="field-input" type="email" id="regEmail" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label">Password</label>
+          <input class="field-input" type="password" id="regPwd" placeholder="At least 8 characters">
+        </div>
+        <div class="field">
+          <label class="field-label">Your profession</label>
+          <select class="field-input" id="regRole">
+            <option value="">Select your role...</option>
+            <option>Product Designer</option>
+            <option>Web Developer</option>
+            <option>Copywriter</option>
+            <option>Consultant</option>
+            <option>Photographer</option>
+            <option>Motion Designer</option>
+            <option>Marketing Strategist</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Hourly rate (USD)</label>
+          <input class="field-input" type="number" id="regRate" placeholder="100" min="1">
+        </div>
+        <button class="btn-auth" onclick="doRegister()">Create my account →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════ -->
+<div id="appShell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">⚡</div>
+      Clientli
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-av" id="sidebarAv">AK</div>
+      <div>
+        <div class="sidebar-uname" id="sidebarName">Alex Kovacs</div>
+        <div class="sidebar-urole" id="sidebarRole">Freelancer</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" data-view="dashboard" onclick="switchView('dashboard',this)"><span class="ni">◈</span>Dashboard</div>
+      <div class="nav-item" data-view="projects" onclick="switchView('projects',this)"><span class="ni">⬡</span>Projects<span class="nav-badge" id="projBadge">0</span></div>
+      <div class="nav-item" data-view="clients" onclick="switchView('clients',this)"><span class="ni">◉</span>Clients</div>
+      <div class="nav-item" data-view="invoices" onclick="switchView('invoices',this)"><span class="ni">◷</span>Invoices<span class="nav-badge" id="invBadge">0</span></div>
+      <div class="nav-item" data-view="timekeeping" onclick="switchView('timekeeping',this)"><span class="ni">⏱</span>Time Tracking</div>
+      <div class="nav-section-label" style="margin-top:8px;">Tools</div>
+      <div class="nav-item" data-view="proposals" onclick="switchView('proposals',this)"><span class="ni">✦</span>Proposals</div>
+      <div class="nav-item" data-view="ai" onclick="switchView('ai',this)"><span class="ni">◈</span>AI Assistant</div>
+      <div class="nav-item" data-view="calendar" onclick="switchView('calendar',this)"><span class="ni">▦</span>Calendar</div>
+      <div class="nav-item" data-view="analytics" onclick="switchView('analytics',this)"><span class="ni">◎</span>Analytics</div>
+      <div class="nav-section-label" style="margin-top:8px;">Account</div>
+      <div class="nav-item" data-view="settings" onclick="switchView('settings',this)"><span class="ni">◌</span>Settings</div>
+      <div class="nav-item" onclick="doLogout()"><span class="ni">↩</span>Sign out</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="upgrade-box">
+        <h4>Upgrade to Pro</h4>
+        <p>Unlimited projects, AI credits, and priority support.</p>
+        <button class="btn-upgrade">Learn More</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+    <div class="content-area" id="contentArea">
+      <!-- Views rendered here -->
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA STORE — localStorage-backed
+// ═══════════════════════════════════════════════════════════════
+const DB = {
+  get: k => { try { return JSON.parse(localStorage.getItem('cl_'+k)) } catch { return null } },
+  set: (k,v) => localStorage.setItem('cl_'+k, JSON.stringify(v)),
+  del: k => localStorage.removeItem('cl_'+k),
+};
+
+// Seed data generator — called on first login for new user
+function generateSeedData(uid) {
+  const clients = [
+    {id:'c1',name:'Sarah Mitchell',company:'Nexus Corp',email:'sarah@nexuscorp.io',phone:'+1 555 234 1234',status:'active',color:'#6366F1',initials:'SM',revenue:0,notes:'Long-term brand design client'},
+    {id:'c2',name:'James O\'Brien',company:'Velvet & Co',email:'james@velvetco.com',phone:'+1 555 234 5678',status:'active',color:'#10B981',initials:'JO',revenue:0,notes:'E-commerce project, fast-payer'},
+    {id:'c3',name:'Lisa Chen',company:'TechFlow',email:'lisa@techflow.dev',phone:'+1 555 345 6789',status:'active',color:'#0EA5E9',initials:'LC',revenue:0,notes:'Referred by Sarah'},
+    {id:'c4',name:'Mark Thompson',company:'GreenLeaf Studio',email:'mark@greenleaf.co',phone:'+1 555 456 7890',status:'active',color:'#8B5CF6',initials:'MT',revenue:0,notes:'Website redesign'},
+    {id:'c5',name:'Anna Kowalski',company:'DataPulse',email:'anna@datapulse.ai',phone:'+1 555 567 8901',status:'lead',color:'#F59E0B',initials:'AK',revenue:0,notes:'Potential AI dashboard project'},
+  ];
+
+  const projects = [
+    {id:'p1',name:'Brand Redesign',client:'Nexus Corp',clientId:'c1',status:'in-progress',progress:72,budget:5200,spent:3744,deadline:'2025-03-15',color:'#6366F1',icon:'🎨',description:'Complete brand overhaul including logo, guidelines, and marketing collateral.'},
+    {id:'p2',name:'E-Commerce Platform',client:'Velvet & Co',clientId:'c2',status:'in-progress',progress:45,budget:8400,spent:3780,deadline:'2025-04-01',color:'#10B981',icon:'🛒',description:'Full e-commerce build with Shopify customisation and payment integration.'},
+    {id:'p3',name:'Mobile App UI Kit',client:'TechFlow',clientId:'c3',status:'review',progress:90,budget:3600,spent:3240,deadline:'2025-02-28',color:'#0EA5E9',icon:'📱',description:'Design system and UI kit for iOS and Android mobile app.'},
+    {id:'p4',name:'Marketing Website',client:'GreenLeaf Studio',clientId:'c4',status:'in-progress',progress:33,budget:4800,spent:1584,deadline:'2025-05-01',color:'#8B5CF6',icon:'🌐',description:'New marketing site with CMS integration and SEO optimisation.'},
+  ];
+
+  const now = new Date();
+  const invoices = [
+    {id:'INV-001',clientId:'c1',client:'Nexus Corp',amount:2600,date:dateStr(-45),due:dateStr(-15),status:'paid',description:'Brand strategy and initial concepts'},
+    {id:'INV-002',clientId:'c2',client:'Velvet & Co',amount:4200,date:dateStr(-20),due:dateStr(10),status:'pending',description:'E-commerce Phase 1 delivery'},
+    {id:'INV-003',clientId:'c3',client:'TechFlow',amount:1800,date:dateStr(-30),due:dateStr(-5),status:'paid',description:'UI Kit — component library'},
+    {id:'INV-004',clientId:'c4',client:'GreenLeaf Studio',amount:2400,date:dateStr(-10),due:dateStr(20),status:'pending',description:'Website design mockups'},
+    {id:'INV-005',clientId:'c1',client:'Nexus Corp',amount:2150,date:dateStr(-60),due:dateStr(-30),status:'overdue',description:'Logo and brand guidelines'},
+    {id:'INV-006',clientId:'c2',client:'Velvet & Co',amount:3400,date:dateStr(-55),due:dateStr(-25),status:'paid',description:'E-commerce strategy and planning'},
+  ];
+
+  // Recalc client revenue
+  invoices.forEach(inv => {
+    if(inv.status === 'paid') {
+      const cl = clients.find(c=>c.id===inv.clientId);
+      if(cl) cl.revenue += inv.amount;
+    }
+  });
+
+  const timeEntries = [
+    {id:'t1',project:'Brand Redesign',projectId:'p1',duration:135,date:dateStr(0),billable:true,note:'Logo concept exploration'},
+    {id:'t2',project:'E-Commerce Platform',projectId:'p2',duration:105,date:dateStr(0),billable:true,note:'Product listing UI'},
+    {id:'t3',project:'Mobile App UI Kit',projectId:'p3',duration:84,date:dateStr(0),billable:true,note:'Navigation components'},
+    {id:'t4',project:'Admin & Emails',projectId:null,duration:39,date:dateStr(0),billable:false,note:'Client emails and invoicing'},
+    {id:'t5',project:'Brand Redesign',projectId:'p1',duration:180,date:dateStr(-1),billable:true,note:'Typography system'},
+    {id:'t6',project:'E-Commerce Platform',projectId:'p2',duration:240,date:dateStr(-1),billable:true,note:'Cart and checkout flow'},
+  ];
+
+  const proposals = [
+    {id:'pr1',title:'Brand Identity Package',client:'Nexus Corp',clientId:'c1',value:4500,status:'accepted',date:dateStr(-30),intro:'I\'d love to help Nexus Corp build a cohesive brand identity that reflects your market positioning.',sent:true},
+    {id:'pr2',title:'Full-Stack Web Application',client:'DataPulse',clientId:'c5',value:12000,status:'sent',date:dateStr(-7),intro:'Based on our conversation, here\'s my proposal for the DataPulse analytics dashboard.',sent:true},
+    {id:'pr3',title:'Marketing Collateral Package',client:'GreenLeaf Studio',clientId:'c4',value:3200,status:'draft',date:dateStr(-2),intro:'',sent:false},
+  ];
+
+  DB.set(uid+'_clients', clients);
+  DB.set(uid+'_projects', projects);
+  DB.set(uid+'_invoices', invoices);
+  DB.set(uid+'_time', timeEntries);
+  DB.set(uid+'_proposals', proposals);
+  DB.set(uid+'_seeded', true);
+}
+
+function dateStr(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().split('T')[0];
+}
+
+function fmtDate(str) {
+  if(!str) return '—';
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+function fmtMoney(n) {
+  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:0});
+}
+
+function fmtDuration(mins) {
+  const h = Math.floor(mins/60), m = mins%60;
+  return h > 0 ? `${h}h ${m > 0 ? m+'m' : ''}` : `${m}m`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH — Firebase (prod) or localStorage (dev)
+// ═══════════════════════════════════════════════════════════════
+let currentUser = null;
+let firebaseIdToken = null; // cached JWT for Worker calls
+
+// Dev mode: seed demo account
+if(DEV_MODE && !DB.get('user_demo')) {
+  DB.set('user_demo', {uid:'demo', first:'Alex', last:'Kovacs', email:'demo@clientli.app', pwd:'demo1234', role:'Product Designer', rate:100, plan:'pro'});
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login') === (i===0)));
+  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab==='register' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pwd   = document.getElementById('loginPwd').value;
+  const err   = document.getElementById('loginError');
+  const btn   = document.querySelector('#loginForm .btn-auth');
+  err.style.display = 'none';
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+
+  try {
+    if(DEV_MODE) {
+      // ── DEV: localStorage auth
+      const users = Object.keys(localStorage).filter(k=>k.startsWith('cl_user_')).map(k=>JSON.parse(localStorage.getItem(k)));
+      const user  = users.find(u=>u.email.toLowerCase()===email && u.pwd===pwd);
+      if(!user) throw new Error('Invalid email or password.');
+      currentUser = user;
+      DB.set('session', user.uid);
+      if(!DB.get(user.uid+'_seeded')) generateSeedData(user.uid);
+      bootApp();
+    } else {
+      // ── PROD: Firebase Auth
+      const cred = await auth.signInWithEmailAndPassword(email, pwd);
+      const fbUser = cred.user;
+      firebaseIdToken = await fbUser.getIdToken();
+      // Load user profile from Firestore
+      const doc = await db.collection('users').doc(fbUser.uid).get();
+      currentUser = doc.exists ? { uid: fbUser.uid, email: fbUser.email, ...doc.data() } : { uid: fbUser.uid, email: fbUser.email, first: 'User', last: '', role: 'Freelancer', rate: 100, plan: 'starter' };
+      if(!DB.get(fbUser.uid+'_seeded')) generateSeedData(fbUser.uid);
+      bootApp();
+    }
+  } catch(e) {
+    err.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'');
+    err.style.display = 'block';
+    btn.textContent = 'Sign in to Clientli →'; btn.disabled = false;
+  }
+}
+
+async function doRegister() {
+  const first = document.getElementById('regFirst').value.trim();
+  const last  = document.getElementById('regLast').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const pwd   = document.getElementById('regPwd').value;
+  const role  = document.getElementById('regRole').value || 'Freelancer';
+  const rate  = parseInt(document.getElementById('regRate').value) || 100;
+  const err   = document.getElementById('regError');
+  const btn   = document.querySelector('#registerForm .btn-auth');
+  err.style.display = 'none';
+
+  if(!first||!last||!email||!pwd) { err.textContent='Please fill in all fields.'; err.style.display='block'; return; }
+  if(pwd.length < 8) { err.textContent='Password must be at least 8 characters.'; err.style.display='block'; return; }
+
+  btn.textContent = 'Creating account...'; btn.disabled = true;
+
+  try {
+    if(DEV_MODE) {
+      // ── DEV: localStorage register
+      const users = Object.keys(localStorage).filter(k=>k.startsWith('cl_user_')).map(k=>JSON.parse(localStorage.getItem(k)));
+      if(users.find(u=>u.email.toLowerCase()===email)) throw new Error('An account with this email already exists.');
+      const uid  = 'u'+Date.now();
+      const user = {uid, first, last, email, pwd, role, rate, plan:'starter'};
+      DB.set('user_'+uid, user);
+      currentUser = user;
+      DB.set('session', uid);
+      generateSeedData(uid);
+    } else {
+      // ── PROD: Firebase Auth + Firestore
+      const cred   = await auth.createUserWithEmailAndPassword(email, pwd);
+      const fbUser = cred.user;
+      await fbUser.updateProfile({ displayName: `${first} ${last}` });
+      firebaseIdToken = await fbUser.getIdToken();
+      const profile = { first, last, email, role, rate, plan:'starter', createdAt: new Date().toISOString() };
+      await db.collection('users').doc(fbUser.uid).set(profile);
+      currentUser = { uid: fbUser.uid, ...profile };
+      generateSeedData(fbUser.uid);
+    }
+    toast('Account created! Welcome to Clientli 🎉','success');
+    bootApp();
+  } catch(e) {
+    err.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'');
+    err.style.display = 'block';
+    btn.textContent = 'Create my account →'; btn.disabled = false;
+  }
+}
+
+async function doLogout() {
+  if(!DEV_MODE && auth) await auth.signOut();
+  DB.del('session');
+  currentUser = null;
+  firebaseIdToken = null;
+  document.getElementById('appShell').classList.remove('visible');
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPwd').value = '';
+  toast('Signed out','info');
+}
+
+async function checkSession() {
+  if(DEV_MODE) {
+    const uid = DB.get('session');
+    if(!uid) return;
+    const user = DB.get('user_'+uid);
+    if(!user) return;
+    currentUser = user;
+    if(!DB.get(uid+'_seeded')) generateSeedData(uid);
+    bootApp();
+  } else {
+    // Firebase auto-restores session
+    auth.onAuthStateChanged(async fbUser => {
+      if(!fbUser) return;
+      firebaseIdToken = await fbUser.getIdToken();
+      const doc = await db.collection('users').doc(fbUser.uid).get();
+      currentUser = doc.exists ? { uid: fbUser.uid, email: fbUser.email, ...doc.data() } : { uid: fbUser.uid, email: fbUser.email, first: 'User', last: '', role: 'Freelancer', rate: 100, plan:'starter' };
+      if(!DB.get(fbUser.uid+'_seeded')) generateSeedData(fbUser.uid);
+      bootApp();
+    });
+  }
+}
+
+// ── Refresh token every 50 mins (Firebase tokens expire in 1hr)
+setInterval(async () => {
+  if(!DEV_MODE && auth?.currentUser) {
+    firebaseIdToken = await auth.currentUser.getIdToken(true);
+  }
+}, 50 * 60 * 1000);
+
+// ═══════════════════════════════════════════════════════════════
+// APP BOOT
+// ═══════════════════════════════════════════════════════════════
+let chartInstances = {};
+
+function bootApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appShell').classList.add('visible');
+
+  // Set sidebar user info
+  const initials = (currentUser.first[0]+currentUser.last[0]).toUpperCase();
+  document.getElementById('sidebarAv').textContent = initials;
+  document.getElementById('sidebarName').textContent = currentUser.first + ' ' + currentUser.last;
+  document.getElementById('sidebarRole').textContent = currentUser.role || 'Freelancer';
+
+  updateBadges();
+  switchView('dashboard', document.querySelector('.nav-item[data-view="dashboard"]'));
+}
+
+function updateBadges() {
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  const invoices = DB.get(uid+'_invoices') || [];
+  document.getElementById('projBadge').textContent = projects.filter(p=>p.status!=='completed').length;
+  document.getElementById('invBadge').textContent = invoices.filter(i=>i.status==='pending'||i.status==='overdue').length;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIEW ROUTER
+// ═══════════════════════════════════════════════════════════════
+const viewTitles = {dashboard:'Dashboard',projects:'Projects',clients:'Clients',invoices:'Invoices',timekeeping:'Time Tracking',proposals:'Proposals',ai:'AI Assistant',calendar:'Calendar',analytics:'Analytics',settings:'Settings'};
+
+function switchView(view, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('topbarTitle').textContent = viewTitles[view] || view;
+
+  // Destroy old charts
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch{} });
+  chartInstances = {};
+
+  const actions = document.getElementById('topbarActions');
+  actions.innerHTML = '';
+
+  const area = document.getElementById('contentArea');
+  const renders = {dashboard:renderDashboard, projects:renderProjects, clients:renderClients, invoices:renderInvoices, timekeeping:renderTimekeeping, proposals:renderProposals, ai:renderAI, calendar:renderCalendar, analytics:renderAnalytics, settings:renderSettings};
+  if(renders[view]) renders[view](area, actions);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderDashboard(area, actions) {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const projects = DB.get(uid+'_projects') || [];
+  const timeEntries = DB.get(uid+'_time') || [];
+  const clients = DB.get(uid+'_clients') || [];
+
+  const revenue = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+  const pending = invoices.filter(i=>i.status==='pending').reduce((s,i)=>s+i.amount,0);
+  const overdue = invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0);
+  const todayHours = timeEntries.filter(t=>t.date===dateStr(0)).reduce((s,t)=>s+t.duration,0);
+  const billableToday = timeEntries.filter(t=>t.date===dateStr(0)&&t.billable).reduce((s,t)=>s+t.duration,0);
+
+  actions.innerHTML = `<button class="btn btn-secondary" onclick="openNewProjectModal()">+ New Project</button><button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Invoice</button>`;
+
+  area.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-card-top" style="background:var(--indigo2);"></div>
+        <div class="stat-icon" style="background:rgba(99,102,241,0.1);color:var(--indigo3);">$</div>
+        <div class="stat-val">${fmtMoney(revenue)}</div>
+        <div class="stat-label">Revenue collected</div>
+        <div class="stat-change" style="color:var(--emerald);">↑ 12.5% this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-top" style="background:var(--emerald);"></div>
+        <div class="stat-icon" style="background:rgba(16,185,129,0.1);color:var(--emerald);">⬡</div>
+        <div class="stat-val">${projects.filter(p=>p.status!=='completed').length}</div>
+        <div class="stat-label">Active projects</div>
+        <div class="stat-change" style="color:var(--emerald);">↑ ${projects.length} total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-top" style="background:var(--amber);"></div>
+        <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:var(--amber);">◷</div>
+        <div class="stat-val">${fmtMoney(pending)}</div>
+        <div class="stat-label">Pending payment</div>
+        <div class="stat-change" style="color:var(--amber);">⚠ ${invoices.filter(i=>i.status==='pending').length} invoices</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-top" style="background:var(--sky);"></div>
+        <div class="stat-icon" style="background:rgba(14,165,233,0.1);color:var(--sky);">⏱</div>
+        <div class="stat-val">${fmtDuration(todayHours)}</div>
+        <div class="stat-label">Tracked today</div>
+        <div class="stat-change" style="color:var(--sky);">${fmtDuration(billableToday)} billable</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="card">
+        <div class="card-header">
+          <h3>Revenue — Last 6 months</h3>
+          <span class="badge badge-indigo">Monthly</span>
+        </div>
+        <div class="card-body chart-wrap" style="height:220px;">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Recent Invoices</h3><button class="btn btn-ghost btn-sm" onclick="switchView('invoices',document.querySelector('[data-view=invoices]'))">View all →</button></div>
+        <table class="table">
+          <tbody>
+            ${invoices.slice(0,5).map(inv=>`
+              <tr>
+                <td><strong>${inv.id}</strong><br><span style="font-size:11px;color:var(--slate)">${inv.client}</span></td>
+                <td><strong>${fmtMoney(inv.amount)}</strong></td>
+                <td>${getInvBadge(inv.status)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Active Projects</h3><button class="btn btn-ghost btn-sm" onclick="switchView('projects',document.querySelector('[data-view=projects]'))">View all →</button></div>
+        <div style="padding:0 0 8px;">
+          ${projects.filter(p=>p.status!=='completed').slice(0,4).map(p=>`
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);">
+              <div style="font-size:20px;">${p.icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;">${p.name}</div>
+                <div style="font-size:11px;color:var(--slate);margin-top:2px;">${p.client}</div>
+                <div class="progress" style="margin-top:6px;"><div class="progress-fill" style="width:${p.progress}%;background:${p.color};"></div></div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:13px;font-weight:600;">${p.progress}%</div>
+                <div style="font-size:11px;color:var(--slate);">Due ${fmtDate(p.deadline)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Today's Time</h3><button class="btn btn-primary btn-sm" onclick="switchView('timekeeping',document.querySelector('[data-view=timekeeping]'))">+ Track time</button></div>
+        <div style="padding:0 0 8px;">
+          ${timeEntries.filter(t=>t.date===dateStr(0)).map(t=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:13px;font-weight:600;">${t.project}</div>
+                <div style="font-size:11px;color:var(--slate);">${t.note}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:13px;font-weight:600;">${fmtDuration(t.duration)}</span>
+                ${t.billable ? '<span class="badge badge-success">Billable</span>' : '<span class="badge badge-muted">Non-billable</span>'}
+              </div>
+            </div>
+          `).join('') || '<div style="padding:20px;text-align:center;color:var(--slate);font-size:13px;">No time tracked yet today.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="switchView(\'timekeeping\',document.querySelector(\'[data-view=timekeeping]\'))">Start tracking →</button></div>'}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Revenue chart
+  setTimeout(() => {
+    const ctx = document.getElementById('revenueChart');
+    if(!ctx) return;
+    const months = ['Aug','Sep','Oct','Nov','Dec','Jan'];
+    const data = [14200,16800,19400,22100,20500, revenue];
+    const grd = ctx.getContext('2d').createLinearGradient(0,0,0,200);
+    grd.addColorStop(0,'rgba(99,102,241,0.25)');
+    grd.addColorStop(1,'rgba(99,102,241,0)');
+    chartInstances.revenue = new Chart(ctx, {
+      type:'line',
+      data:{labels:months,datasets:[{data,borderColor:'#6366F1',backgroundColor:grd,fill:true,tension:0.4,pointBackgroundColor:'#6366F1',pointBorderColor:'#060914',pointBorderWidth:2,pointRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0F1424',titleColor:'#F8F8FC',bodyColor:'#BFC3D9',borderColor:'rgba(255,255,255,0.11)',borderWidth:1,cornerRadius:8,callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7B7F96',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7B7F96',font:{size:11},callback:v=>'$'+(v/1000)+'k'}}}}
+    });
+  },100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROJECTS
+// ═══════════════════════════════════════════════════════════════
+let projectFilter = 'all';
+function renderProjects(area, actions) {
+  const uid = currentUser.uid;
+  let projects = DB.get(uid+'_projects') || [];
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openNewProjectModal()">+ New Project</button>`;
+
+  const filtered = projectFilter==='all' ? projects : projects.filter(p=>p.status===projectFilter);
+
+  area.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">
+      ${['all','in-progress','review','completed'].map(f=>`
+        <button class="btn btn-${projectFilter===f?'primary':'secondary'} btn-sm" onclick="projectFilter='${f}';renderProjects(document.getElementById('contentArea'),document.getElementById('topbarActions'))">${f==='all'?'All':''}${f==='in-progress'?'In Progress':''}${f==='review'?'Review':''}${f==='completed'?'Completed':''} (${f==='all'?projects.length:projects.filter(p=>p.status===f).length})</button>
+      `).join('')}
+    </div>
+    ${filtered.length === 0 ? `
+      <div class="empty-state">
+        <div class="empty-state-icon">⬡</div>
+        <h3>No projects here yet</h3>
+        <p>Add your first project to start tracking progress, time, and budgets.</p>
+        <button class="btn btn-primary" onclick="openNewProjectModal()">+ Create project</button>
+      </div>
+    ` : `
+      <div class="grid-auto">
+        ${filtered.map(p=>`
+          <div class="project-card" onclick="openProjectDetail('${p.id}')">
+            <div class="project-card-icon" style="background:${p.color}18;color:${p.color};">${p.icon}</div>
+            <h4>${p.name}</h4>
+            <div class="project-card-client">${p.client}</div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--slate);margin-bottom:6px;">
+              <span>Progress</span><span style="font-weight:600;color:var(--ice2);">${p.progress}%</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width:${p.progress}%;background:${p.color};"></div></div>
+            <div class="project-card-footer">
+              <div><div style="color:var(--slate);margin-bottom:1px;">Budget</div><strong>${fmtMoney(p.budget)}</strong></div>
+              <div style="text-align:center;"><div style="color:var(--slate);margin-bottom:1px;">Spent</div><strong>${fmtMoney(p.spent)}</strong></div>
+              <div style="text-align:right;"><div style="color:var(--slate);margin-bottom:1px;">Due</div><strong>${fmtDate(p.deadline)}</strong></div>
+            </div>
+            <div style="margin-top:12px;">${getStatusBadge(p.status)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  `;
+}
+
+function openProjectDetail(pid) {
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  const p = projects.find(x=>x.id===pid);
+  if(!p) return;
+  const timeEntries = (DB.get(uid+'_time')||[]).filter(t=>t.projectId===pid);
+  const totalHours = timeEntries.reduce((s,t)=>s+t.duration,0);
+
+  openModal(`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+      <div style="width:48px;height:48px;border-radius:12px;background:${p.color}18;display:flex;align-items:center;justify-content:center;font-size:24px;">${p.icon}</div>
+      <div><div style="font-size:18px;font-weight:700;letter-spacing:-0.03em;">${p.name}</div><div style="font-size:13px;color:var(--slate);">${p.client}</div></div>
+      <div style="margin-left:auto;">${getStatusBadge(p.status)}</div>
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div style="background:var(--bg3);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;color:var(--slate);margin-bottom:3px;">Budget</div>
+        <div style="font-size:20px;font-weight:700;">${fmtMoney(p.budget)}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;color:var(--slate);margin-bottom:3px;">Spent</div>
+        <div style="font-size:20px;font-weight:700;color:${p.spent/p.budget>0.85?'var(--rose)':'var(--emerald)'};">${fmtMoney(p.spent)}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span style="color:var(--slate);">Progress</span><span>${p.progress}%</span></div>
+      <div class="progress" style="height:6px;"><div class="progress-fill" style="width:${p.progress}%;background:${p.color};"></div></div>
+    </div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:16px;line-height:1.65;">${p.description||'No description.'}</div>
+    <div style="font-size:12px;color:var(--slate);margin-bottom:16px;">📅 Due: ${fmtDate(p.deadline)} &nbsp;·&nbsp; ⏱ ${fmtDuration(totalHours)} tracked</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-sm" onclick="closeModal();switchView('timekeeping',document.querySelector('[data-view=timekeeping]'))">Track time</button>
+      <button class="btn btn-secondary btn-sm" onclick="editProject('${p.id}')">Edit project</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')">Delete</button>
+    </div>
+  `);
+}
+
+function editProject(pid) {
+  closeModal();
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  const p = projects.find(x=>x.id===pid);
+  const clients = DB.get(uid+'_clients') || [];
+  openModal(`
+    <div class="modal-title">Edit Project</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="field"><label>Project name</label><input id="epName" value="${p.name}"></div>
+      <div class="field"><label>Client</label>
+        <select id="epClient">${clients.map(c=>`<option value="${c.id}" ${c.id===p.clientId?'selected':''}>${c.company}</option>`).join('')}</select>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Budget ($)</label><input type="number" id="epBudget" value="${p.budget}"></div>
+        <div class="field"><label>Progress (%)</label><input type="number" id="epProgress" value="${p.progress}" min="0" max="100"></div>
+      </div>
+      <div class="field"><label>Deadline</label><input type="date" id="epDeadline" value="${p.deadline}"></div>
+      <div class="field"><label>Status</label>
+        <select id="epStatus">
+          <option value="in-progress" ${p.status==='in-progress'?'selected':''}>In Progress</option>
+          <option value="review" ${p.status==='review'?'selected':''}>In Review</option>
+          <option value="completed" ${p.status==='completed'?'selected':''}>Completed</option>
+          <option value="paused" ${p.status==='paused'?'selected':''}>Paused</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEditProject('${pid}')">Save changes</button>
+      </div>
+    </div>
+  `);
+}
+
+function saveEditProject(pid) {
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  const clients = DB.get(uid+'_clients') || [];
+  const idx = projects.findIndex(x=>x.id===pid);
+  if(idx<0) return;
+  const clientId = document.getElementById('epClient').value;
+  const client = clients.find(c=>c.id===clientId);
+  projects[idx] = {...projects[idx],
+    name: document.getElementById('epName').value,
+    clientId, client: client?.company||'',
+    budget: parseInt(document.getElementById('epBudget').value)||0,
+    progress: Math.min(100,Math.max(0,parseInt(document.getElementById('epProgress').value)||0)),
+    deadline: document.getElementById('epDeadline').value,
+    status: document.getElementById('epStatus').value,
+  };
+  DB.set(uid+'_projects', projects);
+  closeModal(); updateBadges(); toast('Project updated','success');
+  renderProjects(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function deleteProject(pid) {
+  if(!confirm('Delete this project? This cannot be undone.')) return;
+  const uid = currentUser.uid;
+  const projects = (DB.get(uid+'_projects')||[]).filter(p=>p.id!==pid);
+  DB.set(uid+'_projects', projects);
+  closeModal(); updateBadges(); toast('Project deleted','info');
+  renderProjects(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLIENTS
+// ═══════════════════════════════════════════════════════════════
+function renderClients(area, actions) {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openNewClientModal()">+ Add Client</button>`;
+  area.innerHTML = `
+    <div class="card">
+      <table class="table">
+        <thead><tr>
+          <th>Client</th><th>Company</th><th>Email</th><th>Revenue</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${clients.length===0 ? `<tr><td colspan="6"><div class="empty-state" style="padding:40px;"><div class="empty-state-icon">◉</div><h3>No clients yet</h3><p>Add your first client to start tracking projects and revenue.</p><button class="btn btn-primary" onclick="openNewClientModal()">+ Add client</button></div></td></tr>` :
+          clients.map(c=>`
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:10px;">
+                <div class="av" style="width:32px;height:32px;background:${c.color}20;color:${c.color};font-size:11px;">${c.initials}</div>
+                <strong>${c.name}</strong></div></td>
+              <td>${c.company}</td>
+              <td style="color:var(--slate);">${c.email}</td>
+              <td><strong>${c.revenue>0?fmtMoney(c.revenue):'—'}</strong></td>
+              <td>${getClientBadge(c.status)}</td>
+              <td><div style="display:flex;gap:4px;">
+                <button class="btn btn-ghost btn-sm btn-icon" onclick="editClient('${c.id}')" title="Edit">✎</button>
+                <button class="btn btn-danger btn-sm btn-icon" onclick="deleteClient('${c.id}')" title="Delete">✕</button>
+              </div></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function editClient(cid) {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  const c = clients.find(x=>x.id===cid);
+  openModal(`
+    <div class="modal-title">Edit Client</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="modal-row">
+        <div class="field"><label>Name</label><input id="ecName" value="${c.name}"></div>
+        <div class="field"><label>Company</label><input id="ecCompany" value="${c.company}"></div>
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="ecEmail" value="${c.email}"></div>
+      <div class="field"><label>Phone</label><input id="ecPhone" value="${c.phone||''}"></div>
+      <div class="field"><label>Status</label>
+        <select id="ecStatus">
+          <option value="active" ${c.status==='active'?'selected':''}>Active</option>
+          <option value="lead" ${c.status==='lead'?'selected':''}>Lead</option>
+          <option value="inactive" ${c.status==='inactive'?'selected':''}>Inactive</option>
+        </select>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="ecNotes">${c.notes||''}</textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEditClient('${cid}')">Save changes</button>
+      </div>
+    </div>
+  `);
+}
+
+function saveEditClient(cid) {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  const idx = clients.findIndex(x=>x.id===cid);
+  if(idx<0) return;
+  const name = document.getElementById('ecName').value;
+  const company = document.getElementById('ecCompany').value;
+  clients[idx] = {...clients[idx], name, company,
+    email: document.getElementById('ecEmail').value,
+    phone: document.getElementById('ecPhone').value,
+    status: document.getElementById('ecStatus').value,
+    notes: document.getElementById('ecNotes').value,
+    initials: (name[0]+(name.split(' ')[1]?.[0]||'')).toUpperCase(),
+  };
+  DB.set(uid+'_clients', clients);
+  closeModal(); toast('Client updated','success');
+  renderClients(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function deleteClient(cid) {
+  if(!confirm('Delete this client? Their projects and invoices will remain.')) return;
+  const uid = currentUser.uid;
+  DB.set(uid+'_clients', (DB.get(uid+'_clients')||[]).filter(c=>c.id!==cid));
+  toast('Client removed','info');
+  renderClients(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INVOICES
+// ═══════════════════════════════════════════════════════════════
+function renderInvoices(area, actions) {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openNewInvoiceModal()">+ New Invoice</button>`;
+
+  const paid = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+  const pending = invoices.filter(i=>i.status==='pending').reduce((s,i)=>s+i.amount,0);
+  const overdue = invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0);
+
+  area.innerHTML = `
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--emerald);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Collected</div>
+        <div class="stat-val" style="font-size:26px;color:var(--emerald);">${fmtMoney(paid)}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--amber);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Pending</div>
+        <div class="stat-val" style="font-size:26px;color:var(--amber);">${fmtMoney(pending)}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--rose);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Overdue</div>
+        <div class="stat-val" style="font-size:26px;color:var(--rose);">${fmtMoney(overdue)}</div>
+      </div>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Date</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${invoices.length===0 ? `<tr><td colspan="7"><div class="empty-state" style="padding:40px;"><div class="empty-state-icon">◷</div><h3>No invoices yet</h3><p>Create your first invoice to start getting paid.</p><button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Create invoice</button></div></td></tr>` :
+          invoices.map(inv=>`
+            <tr>
+              <td><strong style="color:var(--indigo3);">${inv.id}</strong></td>
+              <td>${inv.client}</td>
+              <td><strong>${fmtMoney(inv.amount)}</strong></td>
+              <td style="color:var(--slate);">${fmtDate(inv.date)}</td>
+              <td style="color:var(--slate);">${fmtDate(inv.due)}</td>
+              <td>${getInvBadge(inv.status)}</td>
+              <td><div style="display:flex;gap:4px;">
+                ${inv.status!=='paid'?`<button class="btn btn-ghost btn-sm" onclick="markPaid('${inv.id}')">✓ Mark paid</button>`:''}
+                <button class="btn btn-ghost btn-sm btn-icon" onclick="deleteInvoice('${inv.id}')" title="Delete">✕</button>
+              </div></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function markPaid(id) {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const inv = invoices.find(i=>i.id===id);
+  if(!inv) return;
+  inv.status = 'paid';
+  // Update client revenue
+  const clients = DB.get(uid+'_clients') || [];
+  const client = clients.find(c=>c.company===inv.client);
+  if(client) { client.revenue += inv.amount; DB.set(uid+'_clients', clients); }
+  DB.set(uid+'_invoices', invoices);
+  toast(`${id} marked as paid 💰`, 'success');
+  updateBadges();
+  renderInvoices(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function deleteInvoice(id) {
+  if(!confirm('Delete this invoice?')) return;
+  const uid = currentUser.uid;
+  DB.set(uid+'_invoices', (DB.get(uid+'_invoices')||[]).filter(i=>i.id!==id));
+  updateBadges(); toast('Invoice deleted','info');
+  renderInvoices(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIME TRACKING
+// ═══════════════════════════════════════════════════════════════
+let timerRunning = false, timerSecs = 0, timerInt = null;
+
+function renderTimekeeping(area, actions) {
+  const uid = currentUser.uid;
+  const entries = DB.get(uid+'_time') || [];
+  const projects = (DB.get(uid+'_projects')||[]).filter(p=>p.status!=='completed');
+
+  const todayTotal = entries.filter(t=>t.date===dateStr(0)).reduce((s,t)=>s+t.duration,0);
+  const weekTotal = entries.filter(t=>t.date>=dateStr(-6)).reduce((s,t)=>s+t.duration,0);
+  const billableToday = entries.filter(t=>t.date===dateStr(0)&&t.billable).reduce((s,t)=>s+t.duration,0);
+
+  area.innerHTML = `
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="card">
+        <div class="card-body" style="text-align:center;">
+          <div style="font-size:12px;color:var(--slate);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">Active timer</div>
+          <div class="timer-display" id="timerDisplay">${fmtTimerSecs(timerSecs)}</div>
+          <div style="margin:14px 0;">
+            <select id="timerProject" style="width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ice);font-size:13px;font-family:'Inter',sans-serif;outline:none;max-width:320px;">
+              <option value="">Select project...</option>
+              ${projects.map(p=>`<option value="${p.id}">${p.name} — ${p.client}</option>`).join('')}
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <input id="timerNote" placeholder="What are you working on?" style="width:100%;max-width:320px;padding:9px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ice);font-size:13px;font-family:'Inter',sans-serif;outline:none;">
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--slate);cursor:pointer;">
+              <input type="checkbox" id="timerBillable" checked style="accent-color:var(--indigo);"> Billable
+            </label>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
+            <button class="btn btn-primary" id="timerBtn" onclick="toggleTimer()">${timerRunning?'⏸ Pause':'▶ Start'}</button>
+            <button class="btn btn-secondary" onclick="resetTimer()">↺ Reset</button>
+            ${timerSecs>0&&!timerRunning?`<button class="btn btn-secondary" onclick="saveTimer()">💾 Save entry</button>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Today's summary</h3>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:14px;">
+            <span style="color:var(--slate);">Total tracked</span><strong>${fmtDuration(todayTotal)}</strong>
+          </div>
+          <div class="progress" style="margin-bottom:6px;"><div class="progress-fill" style="width:${Math.min(100,(todayTotal/480)*100)}%;background:var(--indigo2);"></div></div>
+          <div style="font-size:11px;color:var(--slate);text-align:right;margin-bottom:14px;">${Math.round((todayTotal/480)*100)}% of 8h goal</div>
+          <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;">
+            <span style="color:var(--slate);">Billable</span><span>${fmtDuration(billableToday)} (${fmtMoney(Math.round(billableToday/60*currentUser.rate))})</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;">
+            <span style="color:var(--slate);">Non-billable</span><span>${fmtDuration(todayTotal-billableToday)}</span>
+          </div>
+          <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--slate);">This week</span><strong>${fmtDuration(weekTotal)}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Time entries</h3></div>
+      <table class="table">
+        <thead><tr><th>Project</th><th>Note</th><th>Duration</th><th>Date</th><th>Type</th><th>Value</th><th></th></tr></thead>
+        <tbody>
+          ${entries.slice().reverse().slice(0,20).map(t=>`
+            <tr>
+              <td><strong>${t.project}</strong></td>
+              <td style="color:var(--slate);">${t.note||'—'}</td>
+              <td>${fmtDuration(t.duration)}</td>
+              <td style="color:var(--slate);">${fmtDate(t.date)}</td>
+              <td>${t.billable?'<span class="badge badge-success">Billable</span>':'<span class="badge badge-muted">Non-billable</span>'}</td>
+              <td>${t.billable?fmtMoney(Math.round(t.duration/60*currentUser.rate)):'—'}</td>
+              <td><button class="btn btn-ghost btn-sm btn-icon" onclick="deleteTimeEntry('${t.id}')" title="Delete">✕</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if(timerRunning) {
+    timerInt = setInterval(()=>{
+      timerSecs++;
+      const el = document.getElementById('timerDisplay');
+      if(el) el.textContent = fmtTimerSecs(timerSecs);
+      else clearInterval(timerInt);
+    },1000);
+  }
+}
+
+function fmtTimerSecs(s) {
+  return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(x=>String(x).padStart(2,'0')).join(':');
+}
+
+function toggleTimer() {
+  const proj = document.getElementById('timerProject')?.value;
+  if(!timerRunning && !proj) { toast('Select a project first','error'); return; }
+  timerRunning = !timerRunning;
+  const btn = document.getElementById('timerBtn');
+  if(timerRunning) {
+    if(btn) btn.textContent = '⏸ Pause';
+    clearInterval(timerInt);
+    timerInt = setInterval(()=>{
+      timerSecs++;
+      const el = document.getElementById('timerDisplay');
+      if(el) el.textContent = fmtTimerSecs(timerSecs);
+      else clearInterval(timerInt);
+    },1000);
+    toast('Timer started','success');
+  } else {
+    clearInterval(timerInt);
+    if(btn) btn.textContent = '▶ Resume';
+    renderTimekeeping(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInt); timerRunning = false; timerSecs = 0;
+  renderTimekeeping(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function saveTimer() {
+  if(timerSecs < 60) { toast('Run the timer for at least 1 minute','error'); return; }
+  const uid = currentUser.uid;
+  const projId = document.getElementById('timerProject')?.value;
+  const projects = DB.get(uid+'_projects') || [];
+  const proj = projects.find(p=>p.id===projId);
+  const entries = DB.get(uid+'_time') || [];
+  const billable = document.getElementById('timerBillable')?.checked ?? true;
+  const note = document.getElementById('timerNote')?.value || '';
+  const mins = Math.ceil(timerSecs/60);
+  entries.unshift({id:'t'+Date.now(), project:proj?.name||'Unknown', projectId:projId, duration:mins, date:dateStr(0), billable, note});
+  // Update project spent
+  if(proj && billable) { proj.spent += Math.round(mins/60*currentUser.rate); DB.set(uid+'_projects', projects); }
+  DB.set(uid+'_time', entries);
+  clearInterval(timerInt); timerRunning = false; timerSecs = 0;
+  toast(`${fmtDuration(mins)} saved to ${proj?.name||'project'} ✓`, 'success');
+  renderTimekeeping(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function deleteTimeEntry(id) {
+  const uid = currentUser.uid;
+  DB.set(uid+'_time', (DB.get(uid+'_time')||[]).filter(t=>t.id!==id));
+  toast('Entry deleted','info');
+  renderTimekeeping(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROPOSALS
+// ═══════════════════════════════════════════════════════════════
+function renderProposals(area, actions) {
+  const uid = currentUser.uid;
+  const proposals = DB.get(uid+'_proposals') || [];
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openNewProposalModal()">+ New Proposal</button>`;
+
+  const statColors = {accepted:'badge-success',sent:'badge-info',draft:'badge-muted',declined:'badge-danger'};
+
+  area.innerHTML = proposals.length===0 ? `
+    <div class="empty-state"><div class="empty-state-icon">✦</div><h3>No proposals yet</h3><p>Create a polished proposal and win your next client.</p><button class="btn btn-primary" onclick="openNewProposalModal()">+ Create proposal</button></div>
+  ` : `
+    <div class="grid-auto">
+      ${proposals.map(p=>`
+        <div class="project-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:11px;color:var(--slate);">${fmtDate(p.date)}</span>
+            <span class="badge ${statColors[p.status]||'badge-muted'}">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</span>
+          </div>
+          <h4 style="margin-bottom:4px;">${p.title}</h4>
+          <div style="font-size:12px;color:var(--slate);margin-bottom:16px;">${p.client}</div>
+          <div style="font-family:'Instrument Serif',Georgia,serif;font-size:28px;font-weight:400;letter-spacing:-0.02em;margin-bottom:16px;">${fmtMoney(p.value)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${p.status==='draft'?`<button class="btn btn-primary btn-sm" onclick="sendProposal('${p.id}')">Send →</button>`:''}
+            <button class="btn btn-secondary btn-sm" onclick="openProposalDetail('${p.id}')">View</button>
+            <button class="btn btn-ghost btn-sm" onclick="generateAIProposal('${p.id}')">✦ AI draft</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteProposal('${p.id}')">✕</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function sendProposal(pid) {
+  const uid = currentUser.uid;
+  const proposals = DB.get(uid+'_proposals') || [];
+  const p = proposals.find(x=>x.id===pid);
+  if(!p) return;
+  p.status = 'sent'; p.sent = true;
+  DB.set(uid+'_proposals', proposals);
+  toast(`Proposal sent to ${p.client} 📤`, 'success');
+  renderProposals(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function deleteProposal(pid) {
+  if(!confirm('Delete this proposal?')) return;
+  const uid = currentUser.uid;
+  DB.set(uid+'_proposals', (DB.get(uid+'_proposals')||[]).filter(p=>p.id!==pid));
+  toast('Proposal deleted','info');
+  renderProposals(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function openProposalDetail(pid) {
+  const uid = currentUser.uid;
+  const proposals = DB.get(uid+'_proposals') || [];
+  const p = proposals.find(x=>x.id===pid);
+  openModal(`
+    <div class="modal-title">${p.title}</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;">
+      <div><div style="font-size:12px;color:var(--slate);">Client</div><strong>${p.client}</strong></div>
+      <div><div style="font-size:12px;color:var(--slate);">Value</div><strong>${fmtMoney(p.value)}</strong></div>
+      <div><div style="font-size:12px;color:var(--slate);">Status</div>${getStatusBadge(p.status)}</div>
+    </div>
+    ${p.intro ? `<div style="font-size:14px;color:var(--ice2);line-height:1.72;background:var(--bg3);border-radius:8px;padding:16px;margin-bottom:16px;">${p.intro}</div>` : '<div style="color:var(--slate);font-size:13px;margin-bottom:16px;">No content yet. Use AI to generate a draft.</div>'}
+    ${p.aiContent ? `<div style="font-size:13px;color:var(--ice2);line-height:1.75;white-space:pre-wrap;">${p.aiContent}</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary btn-sm" onclick="generateAIProposal('${pid}');closeModal()">✦ Generate AI content</button>
+      ${p.status==='draft'?`<button class="btn btn-secondary btn-sm" onclick="sendProposal('${pid}');closeModal()">Send →</button>`:''}
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI ASSISTANT
+// ═══════════════════════════════════════════════════════════════
+function renderAI(area, actions) {
+  area.innerHTML = `
+    <div style="max-width:760px;margin:0 auto;">
+      <div style="margin-bottom:24px;">
+        <h2 style="font-size:22px;font-weight:700;letter-spacing:-0.03em;margin-bottom:6px;">AI Assistant ✦</h2>
+        <p style="font-size:14px;color:var(--slate);">Powered by Genie. Write invoices, proposals, client emails, and get business insights.</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="project-card" onclick="setAIMode('invoice')" id="aiModeInvoice" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">📄</div>
+          <h4>Invoice Writer</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Generate professional invoice descriptions and payment terms.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('proposal')" id="aiModeProposal" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">✦</div>
+          <h4>Proposal Generator</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Create persuasive proposals tailored to your client.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('email')" id="aiModeEmail" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">📧</div>
+          <h4>Client Email</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Draft professional follow-ups, updates, and negotiations.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('quote')" id="aiModeQuote" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">💰</div>
+          <h4>Project Quote Builder</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Calculate a quote with custom rationale for your client.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('evaluator')" id="aiModeEvaluator" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">🔍</div>
+          <h4>Client Evaluator</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Analyze a client brief/message for red and green flags.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('polisher')" id="aiModePolisher" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">✨</div>
+          <h4>Feedback Polisher</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Turn rough client feedback into a polished case study blurb.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('contract')" id="aiModeContract" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">⚖️</div>
+          <h4>Contract Clause Generator</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Draft starting-point contract clauses for your projects.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('insight')" id="aiModeInsight" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">📊</div>
+          <h4>Business Insights</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Analyse your freelance business and get actionable advice.</p>
+        </div>
+      </div>
+
+      <div id="aiWorkspace"></div>
+    </div>
+  `;
+}
+
+function setAIMode(mode) {
+  const ws = document.getElementById('aiWorkspace');
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  const clients = DB.get(uid+'_clients') || [];
+  const invoices = DB.get(uid+'_invoices') || [];
+
+  // Remove border highlights from all cards
+  ['invoice', 'proposal', 'email', 'insight', 'quote', 'evaluator', 'polisher', 'contract'].forEach(m => {
+    const el = document.getElementById('aiMode' + m.charAt(0).toUpperCase() + m.slice(1));
+    if(el) el.style.borderColor = 'var(--border)';
+  });
+  // Highlight active card
+  const activeEl = document.getElementById('aiMode' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  if(activeEl) activeEl.style.borderColor = 'var(--indigo)';
+
+  const modes = {
+    invoice: {
+      title:'Invoice Writer',icon:'📄',
+      fields:`
+        <div class="field"><label>Client name</label><input id="aiF1" placeholder="e.g. Nexus Corp" value="${clients[0]?.company||''}"></div>
+        <div class="field"><label>Project / work description</label><input id="aiF2" placeholder="e.g. Brand redesign Phase 2"></div>
+        <div class="modal-row">
+          <div class="field"><label>Amount ($)</label><input type="number" id="aiF3" placeholder="2500"></div>
+          <div class="field"><label>Payment terms</label><select id="aiF4"><option>Net 14</option><option>Net 30</option><option>Due on receipt</option><option>50% upfront, 50% on delivery</option></select></div>
+        </div>
+      `,
+      prompt: () => `Write a professional freelance invoice description for the following:
+Client: ${document.getElementById('aiF1').value}
+Work: ${document.getElementById('aiF2').value}
+Amount: $${document.getElementById('aiF3').value}
+Payment terms: ${document.getElementById('aiF4').value}
+My name: ${currentUser.first} ${currentUser.last}, ${currentUser.role}
+
+Write a clear, professional invoice body with:
+1. A one-paragraph description of the deliverables
+2. Line items breakdown (3-4 items)
+3. Payment instructions
+4. A professional closing note
+
+Keep it concise and business-appropriate.`
+    },
+    proposal: {
+      title:'Proposal Generator',icon:'✦',
+      fields:`
+        <div class="field"><label>Client / company</label><input id="aiF1" placeholder="e.g. DataPulse AI"></div>
+        <div class="field"><label>Project scope</label><textarea id="aiF2" placeholder="Describe what they need..."></textarea></div>
+        <div class="modal-row">
+          <div class="field"><label>Your proposed fee ($)</label><input type="number" id="aiF3" placeholder="5000"></div>
+          <div class="field"><label>Timeline</label><input id="aiF4" placeholder="e.g. 4 weeks"></div>
+        </div>
+      `,
+      prompt: () => `Write a persuasive freelance proposal for:
+Client: ${document.getElementById('aiF1').value}
+Project: ${document.getElementById('aiF2').value}
+Fee: $${document.getElementById('aiF3').value}
+Timeline: ${document.getElementById('aiF4').value}
+Freelancer: ${currentUser.first} ${currentUser.last}, ${currentUser.role}
+
+Structure:
+1. Opening — demonstrate understanding of their problem
+2. Your approach — how you'll solve it
+3. Deliverables — specific, bounded list
+4. Investment — the fee and what it includes
+5. Next steps — clear call to action
+
+Write in a confident, professional tone. Keep it under 400 words.`
+    },
+    email: {
+      title:'Client Email',icon:'📧',
+      fields:`
+        <div class="field"><label>Email purpose</label><select id="aiF1"><option>Project update</option><option>Payment follow-up (polite)</option><option>Payment follow-up (firm)</option><option>Scope change request</option><option>Rate increase notice</option><option>Testimonial request</option><option>Project completion</option><option>New project intro</option></select></div>
+        <div class="field"><label>Client name</label><input id="aiF2" placeholder="e.g. Sarah Mitchell"></div>
+        <div class="field"><label>Key context (optional)</label><textarea id="aiF3" placeholder="Any specific details to include..."></textarea></div>
+      `,
+      prompt: () => `Write a professional freelance ${document.getElementById('aiF1').value.toLowerCase()} email.
+From: ${currentUser.first} ${currentUser.last}
+To: ${document.getElementById('aiF2').value}
+Context: ${document.getElementById('aiF3').value || 'Standard situation'}
+
+Write a complete email with subject line, professional greeting, concise body, and sign-off. Keep it direct and professional — no fluff.`
+    },
+    insight: {
+      title:'Business Insights',icon:'📊',
+      fields:`<div style="background:var(--bg3);border-radius:8px;padding:14px;font-size:13px;color:var(--slate);line-height:1.65;">Your business data will be analysed:<br>• ${projects.length} projects tracked<br>• ${invoices.length} invoices (${invoices.filter(i=>i.status==='paid').length} paid)<br>• ${clients.length} clients<br>• Rate: $${currentUser.rate}/hr</div>
+        <div class="field" style="margin-top:10px;"><label>What do you want insights on?</label>
+          <select id="aiF1"><option>Overall business health</option><option>Revenue optimisation</option><option>Client profitability analysis</option><option>Pricing strategy advice</option><option>Cash flow improvement</option></select>
+        </div>`,
+      prompt: () => {
+        const rev = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+        const pending = invoices.filter(i=>i.status==='pending').reduce((s,i)=>s+i.amount,0);
+        const overdue = invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0);
+        return `Analyse this freelance business and provide actionable insights on: ${document.getElementById('aiF1').value}
+
+Business data:
+- Freelancer: ${currentUser.first} ${currentUser.last}, ${currentUser.role}
+- Hourly rate: $${currentUser.rate}
+- Active projects: ${projects.filter(p=>p.status!=='completed').length}
+- Total clients: ${clients.length}
+- Revenue collected: $${rev.toLocaleString()}
+- Pending payments: $${pending.toLocaleString()}
+- Overdue payments: $${overdue.toLocaleString()}
+- Invoice collection rate: ${invoices.length>0?Math.round((invoices.filter(i=>i.status==='paid').length/invoices.length)*100):0}%
+
+Provide 3-5 specific, actionable insights with concrete next steps. Be direct and data-driven.`;
+      }
+    },
+    quote: {
+      title:'Project Quote Builder',icon:'💰',
+      fields:`
+        <div class="field"><label>Project description</label><input id="aiF1" placeholder="e.g. E-commerce website migration"></div>
+        <div class="modal-row">
+          <div class="field"><label>Freelancer Rate ($/hr)</label><input type="number" id="aiF2" placeholder="80" value="${currentUser.rate||''}"></div>
+          <div class="field"><label>Estimated Hours</label><input type="number" id="aiF3" placeholder="50"></div>
+        </div>
+        <div class="modal-row">
+          <div class="field"><label>Complexity</label><select id="aiF4"><option>Standard</option><option>Moderate</option><option>Complex</option></select></div>
+          <div class="field"><label>Rush Job?</label><select id="aiF5"><option>No</option><option>Yes</option></select></div>
+        </div>
+        <div class="field"><label>Fixed Costs ($) (optional)</label><input type="number" id="aiF6" placeholder="e.g. 250"></div>
+      `,
+      prompt: () => `Please build a project quote with a rationale paragraph.
+Project description: ${document.getElementById('aiF1').value}
+Rate: $${document.getElementById('aiF2').value}
+Estimated hours: ${document.getElementById('aiF3').value}
+Complexity: ${document.getElementById('aiF4').value}
+Rush job: ${document.getElementById('aiF5').value.toLowerCase()}
+Fixed costs: $${document.getElementById('aiF6').value || '0'}`
+    },
+    evaluator: {
+      title:'Client Evaluator',icon:'🔍',
+      fields:`
+        <div class="field"><label>Pasted Client Message / Project Brief</label><textarea id="aiF1" style="height:120px;" placeholder="Paste the email or brief here..."></textarea></div>
+        <div class="field"><label>Your typical minimum budget ($) (optional)</label><input type="number" id="aiF2" placeholder="e.g. 1000"></div>
+      `,
+      prompt: () => `Please evaluate this prospective client's brief/message for red and green flags.
+Message/Brief:
+${document.getElementById('aiF1').value}
+
+Freelancer minimum budget context: $${document.getElementById('aiF2').value || 'None provided'}`
+    },
+    polisher: {
+      title:'Feedback Polisher',icon:'✨',
+      fields:`
+        <div class="field"><label>Rough Feedback</label><textarea id="aiF1" style="height:100px;" placeholder="e.g. Sarah was great, app designs are clean, done way ahead of schedule..."></textarea></div>
+        <div class="modal-row">
+          <div class="field"><label>Client Name</label><input id="aiF2" placeholder="e.g. Jane Doe"></div>
+          <div class="field"><label>Client Role/Company (optional)</label><input id="aiF3" placeholder="e.g. CEO at TechCorp"></div>
+        </div>
+      `,
+      prompt: () => `Please turn this client's rough, informal feedback into a polished, quotable case study blurb.
+Feedback: ${document.getElementById('aiF1').value}
+Client name: ${document.getElementById('aiF2').value}
+Role/Company: ${document.getElementById('aiF3').value || 'None'}`
+    },
+    contract: {
+      title:'Contract Clause Generator',icon:'⚖️',
+      fields:`
+        <div class="field"><label>Clause Type</label><select id="aiF1"><option>Payment Terms</option><option>Late Payment Penalties</option><option>Intellectual Property / Ownership</option><option>Termination & Kill Fee</option><option>Rounds of Revisions</option><option>Scope Change Procedures</option></select></div>
+        <div class="field"><label>Specific Terms / Requirements (optional)</label><textarea id="aiF2" placeholder="e.g. 2 rounds of revisions, payment due within 14 days, etc..."></textarea></div>
+      `,
+      prompt: () => `Please draft starting-point contract clause language.
+Clause type: ${document.getElementById('aiF1').value}
+Specific terms requested: ${document.getElementById('aiF2').value || 'None provided'}`
+    }
+  };
+
+  const m = modes[mode];
+  ws.innerHTML = `
+    <div class="card">
+      <div class="card-header"><h3>${m.icon} ${m.title}</h3></div>
+      <div class="card-body">
+        <div class="modal-form" style="margin-bottom:16px;">${m.fields}</div>
+        <button class="btn btn-primary" onclick="runAI()">✦ Generate with Genie</button>
+        <div id="aiResult" style="margin-top:16px;display:none;">
+          <div class="ai-panel">
+            <div class="ai-panel-header">
+              <span style="font-size:14px;">✦</span>
+              <span class="ai-badge">Genie</span>
+            </div>
+            <div id="aiOutputText" class="ai-output" contenteditable="true" style="outline:none;padding:6px;border-radius:4px;border:1px dashed rgba(255,255,255,0.1);"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="copyAIOutput()">Copy output</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  window.__currentAIPrompt = m.prompt;
+  window.__currentAIMode   = mode;
+}
+
+async function runAI() {
+  if(!window.__currentAIPrompt) { toast('Select a mode first','error'); return; }
+  const prompt = window.__currentAIPrompt();
+  const resultDiv = document.getElementById('aiResult');
+  const outputEl = document.getElementById('aiOutputText');
+  resultDiv.style.display = 'block';
+  outputEl.innerHTML = `<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Genie is thinking...</span></div>`;
+
+  try {
+    // Check plan limit
+    if(!DEV_MODE && currentUser?.plan === 'starter') {
+      outputEl.innerHTML = `<div style="text-align:center;padding:20px;">
+        <div style="font-size:32px;margin-bottom:10px;">⚡</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">AI features require Pro</div>
+        <div style="font-size:13px;color:var(--slate);margin-bottom:16px;">Upgrade to access AI writing tools powered by Genie.</div>
+        <button class="btn btn-primary" onclick="openUpgradeModal()">Upgrade to Pro →</button>
+      </div>`;
+      return;
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    // Add Firebase auth token if in prod mode
+    if(!DEV_MODE && firebaseIdToken) headers['Authorization'] = `Bearer ${firebaseIdToken}`;
+
+    const modeMapping = {
+      invoice: 'invoice',
+      proposal: 'proposal',
+      quote: 'proposal',
+      email: 'email',
+      insight: 'insight',
+      evaluator: 'general',
+      polisher: 'general',
+      contract: 'general'
+    };
+    const backendMode = modeMapping[window.__currentAIMode] || 'general';
+
+    // In DEV_MODE, call Anthropic directly (for testing in Claude.ai)
+    // In PROD, call the Worker which uses DeepSeek
+    let text = '';
+    if(DEV_MODE) {
+      const res = await fetch('http://localhost:8787/api/ai', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ messages:[{role:'user',content:prompt}], mode: backendMode })
+      });
+      if(!res.ok) { const e = await res.json(); throw new Error(e.error || 'Worker error'); }
+      const data = await res.json();
+      text = data.text || 'No response.';
+    } else {
+      const res = await fetch(`${WORKER_URL}/api/ai`, {
+        method:'POST',
+        headers,
+        body: JSON.stringify({ messages:[{role:'user',content:prompt}], mode: backendMode })
+      });
+      if(!res.ok) { const e = await res.json(); throw new Error(e.error || 'Worker error'); }
+      const data = await res.json();
+      text = data.text || 'No response.';
+    }
+
+    outputEl.textContent = text;
+    window.__lastAIOutput = text;
+    toast('Content generated ✓','success');
+  } catch(e) {
+    outputEl.innerHTML = `<span style="color:var(--rose);">Error: ${e.message}</span>`;
+    toast('AI request failed','error');
+  }
+}
+
+function copyAIOutput() {
+  const el = document.getElementById('aiOutputText');
+  const text = el ? el.innerText : window.__lastAIOutput;
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>toast('Copied to clipboard','success'));
+}
+
+async function generateAIProposal(pid) {
+  const uid = currentUser.uid;
+  const proposals = DB.get(uid+'_proposals') || [];
+  const p = proposals.find(x=>x.id===pid);
+  if(!p) return;
+  toast('Generating proposal with Genie...','info');
+  try {
+    const prompt = `Write a compelling freelance proposal for:
+Title: ${p.title}
+Client: ${p.client}
+Value: $${p.value.toLocaleString()}
+From: ${currentUser.first} ${currentUser.last}, ${currentUser.role}
+
+Include: understanding of their need, your approach, deliverables, and a strong close. Under 300 words, confident tone.`;
+
+    let text = '';
+    if(DEV_MODE) {
+      const res = await fetch('http://localhost:8787/api/ai', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ messages:[{role:'user',content:prompt}], mode:'proposal' })
+      });
+      if(!res.ok) { const e = await res.json(); throw new Error(e.error || 'Worker error'); }
+      const data = await res.json();
+      text = data.text || '';
+    } else {
+      const headers = { 'Content-Type':'application/json' };
+      if(firebaseIdToken) headers['Authorization'] = `Bearer ${firebaseIdToken}`;
+      const res = await fetch(`${WORKER_URL}/api/ai`, {
+        method:'POST', headers,
+        body: JSON.stringify({ messages:[{role:'user',content:prompt}], mode:'proposal' })
+      });
+      const data = await res.json();
+      text = data.text || '';
+    }
+
+    p.aiContent = text;
+    DB.set(uid+'_proposals', proposals);
+    toast('Proposal content generated ✓','success');
+    renderProposals(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+  } catch(e) { toast('AI generation failed','error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════════════
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+
+function renderCalendar(area, actions) {
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  actions.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar(document.getElementById('contentArea'),document.getElementById('topbarActions'))">‹</button>
+    <span style="font-size:14px;font-weight:600;min-width:140px;text-align:center;">${new Date(calYear,calMonth,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>
+    <button class="btn btn-ghost btn-sm" onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar(document.getElementById('contentArea'),document.getElementById('topbarActions'))">›</button>
+  `;
+
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  // Build events map
+  const events = {};
+  projects.forEach(p => {
+    if(!p.deadline) return;
+    const d = new Date(p.deadline+'T12:00:00');
+    if(d.getFullYear()===calYear && d.getMonth()===calMonth) {
+      const day = d.getDate();
+      if(!events[day]) events[day] = [];
+      events[day].push({title:p.name, color:p.color, type:'deadline'});
+    }
+  });
+
+  let html = `<div class="card"><div class="card-body">`;
+  html += `<div class="cal-grid">`;
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => html += `<div class="cal-day-header">${d}</div>`);
+
+  // Prev month padding
+  for(let i=0;i<firstDay;i++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-firstDay+1+i}</div></div>`;
+  }
+
+  for(let d=1;d<=daysInMonth;d++) {
+    const isToday = today.getDate()===d && today.getMonth()===calMonth && today.getFullYear()===calYear;
+    const dayEvents = events[d] || [];
+    html += `<div class="cal-day ${isToday?'today':''}">
+      <div class="cal-day-num">${d}</div>
+      ${dayEvents.slice(0,2).map(e=>`<div class="cal-event" style="background:${e.color}20;color:${e.color};">📅 ${e.title}</div>`).join('')}
+      ${dayEvents.length>2?`<div class="cal-event" style="color:var(--slate);">+${dayEvents.length-2} more</div>`:''}
+    </div>`;
+  }
+
+  const remaining = 42 - firstDay - daysInMonth;
+  for(let i=1;i<=remaining;i++) html += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+
+  html += `</div></div></div>`;
+
+  // Upcoming deadlines
+  const upcoming = projects.filter(p=>p.deadline && new Date(p.deadline+'T12:00:00')>=today).sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)).slice(0,5);
+  if(upcoming.length) {
+    html += `<div class="card" style="margin-top:14px;"><div class="card-header"><h3>Upcoming Deadlines</h3></div><table class="table"><tbody>
+      ${upcoming.map(p=>{
+        const days = Math.ceil((new Date(p.deadline+'T12:00:00')-today)/(1000*60*60*24));
+        return `<tr><td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--slate);">${p.client}</span></td>
+          <td>${fmtDate(p.deadline)}</td>
+          <td><span class="badge ${days<=3?'badge-danger':days<=7?'badge-warning':'badge-muted'}">${days}d left</span></td>
+          <td>${getStatusBadge(p.status)}</td></tr>`;
+      }).join('')}
+    </tbody></table></div>`;
+  }
+
+  area.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════════════
+function renderAnalytics(area, actions) {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const projects = DB.get(uid+'_projects') || [];
+  const clients = DB.get(uid+'_clients') || [];
+  const timeEntries = DB.get(uid+'_time') || [];
+
+  const revenue = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+  const totalBillableHours = timeEntries.filter(t=>t.billable).reduce((s,t)=>s+t.duration,0)/60;
+  const effectiveRate = totalBillableHours > 0 ? Math.round(revenue/totalBillableHours) : currentUser.rate;
+  const collectionRate = invoices.length > 0 ? Math.round((invoices.filter(i=>i.status==='paid').length/invoices.length)*100) : 0;
+  const avgProject = projects.length > 0 ? Math.round(projects.reduce((s,p)=>s+p.budget,0)/projects.length) : 0;
+
+  area.innerHTML = `
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--indigo2);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Effective rate</div>
+        <div class="stat-val" style="font-size:26px;">${fmtMoney(effectiveRate)}<span style="font-size:14px;color:var(--slate);">/hr</span></div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--emerald);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Collection rate</div>
+        <div class="stat-val" style="font-size:26px;color:var(--emerald);">${collectionRate}%</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--amber);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Avg project value</div>
+        <div class="stat-val" style="font-size:26px;">${fmtMoney(avgProject)}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--violet);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Total billable hrs</div>
+        <div class="stat-val" style="font-size:26px;">${totalBillableHours.toFixed(1)}h</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="card"><div class="card-header"><h3>Revenue by Month</h3></div>
+        <div class="card-body chart-wrap" style="height:220px;"><canvas id="analyticsRevChart"></canvas></div>
+      </div>
+      <div class="card"><div class="card-header"><h3>Revenue by Client</h3></div>
+        <div class="card-body chart-wrap" style="height:220px;"><canvas id="clientChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><h3>Project Status Breakdown</h3></div>
+        <div class="card-body chart-wrap" style="height:180px;position:relative;">
+          <canvas id="statusChart"></canvas>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:0 20px 16px;">
+          ${[{label:'In Progress',color:'#6366F1',key:'in-progress'},{label:'In Review',color:'#F59E0B',key:'review'},{label:'Completed',color:'#10B981',key:'completed'}].map(s=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+              <div style="display:flex;align-items:center;gap:7px;"><div style="width:8px;height:8px;border-radius:2px;background:${s.color};"></div>${s.label}</div>
+              <strong>${projects.filter(p=>p.status===s.key).length}</strong>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><h3>Top Clients by Revenue</h3></div>
+        <div style="padding:0 0 8px;">
+          ${clients.filter(c=>c.revenue>0).sort((a,b)=>b.revenue-a.revenue).slice(0,5).map(c=>`
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);">
+              <div class="av" style="width:30px;height:30px;background:${c.color}20;color:${c.color};font-size:10px;">${c.initials}</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;">${c.company}</div>
+                <div class="progress" style="margin-top:4px;">
+                  <div class="progress-fill" style="width:${Math.round((c.revenue/Math.max(...clients.map(x=>x.revenue||0)))*100)}%;background:${c.color};"></div>
+                </div>
+              </div>
+              <strong style="font-size:13px;">${fmtMoney(c.revenue)}</strong>
+            </div>
+          `).join('') || '<div style="padding:20px;text-align:center;color:var(--slate);font-size:13px;">No revenue data yet.</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    // Revenue chart
+    const rCtx = document.getElementById('analyticsRevChart');
+    if(rCtx) {
+      const months=['Aug','Sep','Oct','Nov','Dec','Jan'];
+      const rev = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+      const grd = rCtx.getContext('2d').createLinearGradient(0,0,0,200);
+      grd.addColorStop(0,'rgba(99,102,241,0.2)'); grd.addColorStop(1,'rgba(99,102,241,0)');
+      chartInstances.ar = new Chart(rCtx, {type:'bar',
+        data:{labels:months,datasets:[
+          {label:'Income',data:[14200,16800,19400,22100,20500,rev||0],backgroundColor:'rgba(99,102,241,0.6)',borderRadius:4},
+          {label:'Expenses',data:[3200,3800,4100,4500,3900,4800],backgroundColor:'rgba(244,63,94,0.4)',borderRadius:4}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7B7F96',font:{size:11},usePointStyle:true}},tooltip:{backgroundColor:'#0F1424',titleColor:'#F8F8FC',bodyColor:'#BFC3D9',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8}},scales:{x:{grid:{display:false},ticks:{color:'#7B7F96',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7B7F96',font:{size:11},callback:v=>'$'+(v/1000)+'k'}}}}
+      });
+    }
+
+    // Client revenue chart
+    const cCtx = document.getElementById('clientChart');
+    if(cCtx) {
+      const topClients = clients.filter(c=>c.revenue>0).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
+      chartInstances.cr = new Chart(cCtx, {type:'bar',
+        data:{labels:topClients.map(c=>c.company),datasets:[{data:topClients.map(c=>c.revenue),backgroundColor:topClients.map(c=>c.color+'99'),borderRadius:4,barPercentage:0.6}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0F1424',titleColor:'#F8F8FC',bodyColor:'#BFC3D9',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8,callbacks:{label:c=>'$'+c.parsed.x.toLocaleString()}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7B7F96',font:{size:11},callback:v=>'$'+(v/1000)+'k'}},y:{grid:{display:false},ticks:{color:'#BFC3D9',font:{size:11}}}}}
+      });
+    }
+
+    // Status donut
+    const sCtx = document.getElementById('statusChart');
+    if(sCtx) {
+      const counts = ['in-progress','review','completed','paused'].map(s=>projects.filter(p=>p.status===s).length);
+      chartInstances.st = new Chart(sCtx, {type:'doughnut',
+        data:{labels:['In Progress','Review','Completed','Paused'],datasets:[{data:counts,backgroundColor:['#6366F1','#F59E0B','#10B981','#484C63'],borderColor:'#0A0E1C',borderWidth:3,hoverOffset:4}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#0F1424',titleColor:'#F8F8FC',bodyColor:'#BFC3D9',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:8}}}
+      });
+    }
+  }, 100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════
+function renderSettings(area, actions) {
+  area.innerHTML = `
+    <div style="max-width:600px;">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><h3>Profile</h3></div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+            <div class="av" style="width:64px;height:64px;font-size:22px;background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;border-radius:14px;">${(currentUser.first[0]+currentUser.last[0]).toUpperCase()}</div>
+            <div>
+              <div style="font-size:16px;font-weight:700;">${currentUser.first} ${currentUser.last}</div>
+              <div style="font-size:13px;color:var(--slate);">${currentUser.email}</div>
+            </div>
+          </div>
+          <div class="modal-form">
+            <div class="modal-row">
+              <div class="field"><label>First name</label><input id="setFirst" value="${currentUser.first}"></div>
+              <div class="field"><label>Last name</label><input id="setLast" value="${currentUser.last}"></div>
+            </div>
+            <div class="field"><label>Profession / role</label><input id="setRole" value="${currentUser.role||''}"></div>
+            <div class="field"><label>Hourly rate ($)</label><input type="number" id="setRate" value="${currentUser.rate||100}"></div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button class="btn btn-primary" onclick="saveSettings()">Save changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><h3>Change Password</h3></div>
+        <div class="card-body">
+          <div class="modal-form">
+            <div class="field"><label>Current password</label><input type="password" id="setPwdCur"></div>
+            <div class="field"><label>New password</label><input type="password" id="setPwdNew"></div>
+            <button class="btn btn-secondary" onclick="changePwd()" style="width:fit-content;">Update password</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:rgba(244,63,94,0.2);">
+        <div class="card-header"><h3 style="color:var(--rose);">Danger Zone</h3></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--slate);margin-bottom:14px;">Reset all your data (projects, clients, invoices, time entries) back to the sample data.</p>
+          <button class="btn btn-danger" onclick="resetData()">Reset to sample data</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveSettings() {
+  currentUser.first = document.getElementById('setFirst').value.trim() || currentUser.first;
+  currentUser.last  = document.getElementById('setLast').value.trim()  || currentUser.last;
+  currentUser.role  = document.getElementById('setRole').value.trim();
+  currentUser.rate  = parseInt(document.getElementById('setRate').value) || currentUser.rate;
+  DB.set('user_'+currentUser.uid, currentUser);
+  document.getElementById('sidebarName').textContent = currentUser.first + ' ' + currentUser.last;
+  document.getElementById('sidebarRole').textContent = currentUser.role;
+  document.getElementById('sidebarAv').textContent = (currentUser.first[0]+currentUser.last[0]).toUpperCase();
+  toast('Settings saved ✓','success');
+}
+
+function changePwd() {
+  const cur = document.getElementById('setPwdCur').value;
+  const nw  = document.getElementById('setPwdNew').value;
+  if(cur !== currentUser.pwd) { toast('Current password is incorrect','error'); return; }
+  if(nw.length < 8) { toast('New password must be at least 8 characters','error'); return; }
+  currentUser.pwd = nw;
+  DB.set('user_'+currentUser.uid, currentUser);
+  document.getElementById('setPwdCur').value=''; document.getElementById('setPwdNew').value='';
+  toast('Password updated ✓','success');
+}
+
+function resetData() {
+  if(!confirm('This will reset all your data to the sample data. Continue?')) return;
+  DB.del(currentUser.uid+'_seeded');
+  generateSeedData(currentUser.uid);
+  toast('Data reset to samples ✓','info');
+  switchView('dashboard', document.querySelector('[data-view=dashboard]'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODALS — NEW ITEMS
+// ═══════════════════════════════════════════════════════════════
+function openNewProjectModal() {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  openModal(`
+    <div class="modal-title">New Project</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="field"><label>Project name</label><input id="npName" placeholder="e.g. Brand Redesign"></div>
+      <div class="field"><label>Client</label>
+        <select id="npClient">
+          <option value="">Select client...</option>
+          ${clients.map(c=>`<option value="${c.id}">${c.company}</option>`).join('')}
+        </select>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Budget ($)</label><input type="number" id="npBudget" placeholder="5000"></div>
+        <div class="field"><label>Deadline</label><input type="date" id="npDeadline"></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="npDesc" placeholder="Brief project description..."></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="createProject()">Create project</button>
+      </div>
+    </div>
+  `);
+}
+
+function createProject() {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  const projects = DB.get(uid+'_projects') || [];
+  const name = document.getElementById('npName').value.trim();
+  const clientId = document.getElementById('npClient').value;
+  const budget = parseInt(document.getElementById('npBudget').value) || 0;
+  const deadline = document.getElementById('npDeadline').value;
+  const desc = document.getElementById('npDesc').value.trim();
+
+  if(!name) { toast('Enter a project name','error'); return; }
+  if(!clientId) { toast('Select a client','error'); return; }
+
+  const client = clients.find(c=>c.id===clientId);
+  const icons = ['🎨','🛒','📱','🌐','📊','✦','💡','🔧'];
+  const colors = ['#6366F1','#10B981','#0EA5E9','#8B5CF6','#F59E0B','#F43F5E','#14B8A6','#F97316'];
+  const idx = projects.length % icons.length;
+
+  projects.push({
+    id:'p'+Date.now(), name, client:client.company, clientId, status:'in-progress',
+    progress:0, budget, spent:0, deadline: deadline||dateStr(30),
+    color:colors[idx], icon:icons[idx], description:desc
+  });
+  DB.set(uid+'_projects', projects);
+  closeModal(); updateBadges(); toast(`Project "${name}" created ✓`, 'success');
+  if(document.querySelector('.nav-item.active')?.dataset.view === 'projects') {
+    renderProjects(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+  } else if(document.querySelector('.nav-item.active')?.dataset.view === 'dashboard') {
+    renderDashboard(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+  }
+}
+
+function openNewClientModal() {
+  openModal(`
+    <div class="modal-title">Add Client</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="modal-row">
+        <div class="field"><label>Contact name</label><input id="ncName" placeholder="Sarah Mitchell"></div>
+        <div class="field"><label>Company</label><input id="ncCompany" placeholder="Acme Corp"></div>
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="ncEmail" placeholder="sarah@acme.com"></div>
+      <div class="field"><label>Phone (optional)</label><input id="ncPhone" placeholder="+1 555 000 0000"></div>
+      <div class="field"><label>Status</label><select id="ncStatus"><option value="lead">Lead</option><option value="active">Active</option></select></div>
+      <div class="field"><label>Notes</label><textarea id="ncNotes" placeholder="How did you meet? Any important context..."></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="createClient()">Add client</button>
+      </div>
+    </div>
+  `);
+}
+
+function createClient() {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  const name = document.getElementById('ncName').value.trim();
+  const company = document.getElementById('ncCompany').value.trim();
+  if(!name||!company) { toast('Name and company are required','error'); return; }
+  const colors = ['#6366F1','#10B981','#0EA5E9','#8B5CF6','#F59E0B','#F43F5E','#14B8A6'];
+  clients.push({
+    id:'c'+Date.now(), name, company,
+    email: document.getElementById('ncEmail').value,
+    phone: document.getElementById('ncPhone').value,
+    status: document.getElementById('ncStatus').value,
+    notes: document.getElementById('ncNotes').value,
+    color: colors[clients.length % colors.length],
+    initials: (name[0]+(name.split(' ')[1]?.[0]||'')).toUpperCase(),
+    revenue: 0
+  });
+  DB.set(uid+'_clients', clients);
+  closeModal(); toast(`${company} added ✓`,'success');
+  renderClients(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+function openNewInvoiceModal() {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  const invoices = DB.get(uid+'_invoices') || [];
+  const nextNum = String(invoices.length + 1).padStart(3,'0');
+  openModal(`
+    <div class="modal-title">New Invoice</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="modal-row">
+        <div class="field"><label>Invoice number</label><input id="niNum" value="INV-${nextNum}"></div>
+        <div class="field"><label>Client</label>
+          <select id="niClient">
+            <option value="">Select client...</option>
+            ${clients.map(c=>`<option value="${c.id}|${c.company}">${c.company}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Amount ($)</label><input type="number" id="niAmount" placeholder="2500"></div>
+        <div class="field"><label>Due date</label><input type="date" id="niDue" value="${dateStr(14)}"></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="niDesc" placeholder="Services rendered..."></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="createInvoice()">Create invoice</button>
+      </div>
+    </div>
+  `);
+}
+
+function createInvoice() {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const id = document.getElementById('niNum').value.trim();
+  const [clientId, clientName] = (document.getElementById('niClient').value || '|').split('|');
+  const amount = parseInt(document.getElementById('niAmount').value) || 0;
+  const due = document.getElementById('niDue').value;
+  const description = document.getElementById('niDesc').value.trim();
+
+  if(!id || !clientId || !amount) { toast('Fill in all required fields','error'); return; }
+
+  invoices.unshift({id, clientId, client:clientName, amount, date:dateStr(0), due, status:'pending', description});
+  DB.set(uid+'_invoices', invoices);
+  closeModal(); updateBadges(); toast(`Invoice ${id} created ✓`,'success');
+  if(document.querySelector('.nav-item.active')?.dataset.view==='invoices') {
+    renderInvoices(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+  }
+}
+
+function openNewProposalModal() {
+  const uid = currentUser.uid;
+  const clients = DB.get(uid+'_clients') || [];
+  openModal(`
+    <div class="modal-title">New Proposal</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="field"><label>Proposal title</label><input id="nprTitle" placeholder="e.g. Brand Identity Package"></div>
+      <div class="field"><label>Client</label>
+        <select id="nprClient">
+          <option value="">Select client...</option>
+          ${clients.map(c=>`<option value="${c.id}|${c.company}">${c.company}</option>`).join('')}
+        </select>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Proposed value ($)</label><input type="number" id="nprValue" placeholder="5000"></div>
+        <div class="field"><label>Status</label><select id="nprStatus"><option value="draft">Draft</option><option value="sent">Send immediately</option></select></div>
+      </div>
+      <div class="field"><label>Introduction</label><textarea id="nprIntro" placeholder="Opening paragraph for your proposal..."></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="createProposal()">Create proposal</button>
+      </div>
+    </div>
+  `);
+}
+
+function createProposal() {
+  const uid = currentUser.uid;
+  const proposals = DB.get(uid+'_proposals') || [];
+  const title = document.getElementById('nprTitle').value.trim();
+  const [clientId, client] = (document.getElementById('nprClient').value || '|').split('|');
+  const value = parseInt(document.getElementById('nprValue').value) || 0;
+  const status = document.getElementById('nprStatus').value;
+  const intro = document.getElementById('nprIntro').value.trim();
+  if(!title||!clientId) { toast('Title and client are required','error'); return; }
+  proposals.unshift({id:'pr'+Date.now(), title, client, clientId, value, status, date:dateStr(0), intro, sent:status==='sent'});
+  DB.set(uid+'_proposals', proposals);
+  closeModal(); toast(`Proposal created ✓`,'success');
+  renderProposals(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function openModal(content) {
+  document.getElementById('modalContainer')?.remove();
+  const div = document.createElement('div');
+  div.id = 'modalContainer';
+  div.className = 'modal-overlay';
+  div.innerHTML = `<div class="modal">${content}</div>`;
+  div.addEventListener('click', e => { if(e.target === div) closeModal(); });
+  document.body.appendChild(div);
+}
+function closeModal() { document.getElementById('modalContainer')?.remove(); }
+
+function toast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  const icons = {success:'✓',error:'✕',info:'ℹ'};
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span>${icons[type]||'•'}</span>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+function getInvBadge(status) {
+  const m = {paid:'badge-success',pending:'badge-warning',overdue:'badge-danger',draft:'badge-muted'};
+  const l = {paid:'Paid',pending:'Pending',overdue:'Overdue',draft:'Draft'};
+  return `<span class="badge ${m[status]||'badge-muted'}">${l[status]||status}</span>`;
+}
+
+function getStatusBadge(status) {
+  const m = {'in-progress':'badge-indigo',review:'badge-warning',completed:'badge-success',paused:'badge-muted',accepted:'badge-success',sent:'badge-info',draft:'badge-muted',declined:'badge-danger'};
+  const l = {'in-progress':'In Progress',review:'Review',completed:'Completed',paused:'Paused',accepted:'Accepted',sent:'Sent',draft:'Draft',declined:'Declined'};
+  return `<span class="badge ${m[status]||'badge-muted'}">${l[status]||status}</span>`;
+}
+
+function getClientBadge(status) {
+  const m = {active:'badge-success',lead:'badge-warning',inactive:'badge-muted'};
+  return `<span class="badge ${m[status]||'badge-muted'}">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ONBOARDING — shown to brand-new users on first login
+// ═══════════════════════════════════════════════════════════════
+function showOnboarding() {
+  const step = DB.get(currentUser.uid+'_onboarding_step') || 0;
+  if(step >= 3) return; // already done
+  const steps = [
+    {
+      icon:'⚡',
+      title:`Welcome to Clientli, ${currentUser.first}!`,
+      body:`Your freelance command center is ready. We've loaded some sample data so you can explore. Let's take a quick tour — it'll take 30 seconds.`,
+      action:'Next →',
+    },
+    {
+      icon:'📊',
+      title:'Your dashboard shows the full picture',
+      body:`Revenue, active projects, pending invoices, and today's tracked time — all in one view. Every number updates live as you create real data.`,
+      action:'Got it →',
+    },
+    {
+      icon:'✦',
+      title:'AI is built right in',
+      body:`Go to AI Assistant to generate proposals, invoice copy, client emails, and business insights — all powered by Genie, directly inside your workspace.`,
+      action:'Start using Clientli →',
+    },
+  ];
+  const s = steps[step];
+  openModal(`
+    <div style="text-align:center;padding:12px 0;">
+      <div style="font-size:48px;margin-bottom:16px;">${s.icon}</div>
+      <h2 style="font-size:22px;font-weight:700;letter-spacing:-0.03em;margin-bottom:12px;">${s.title}</h2>
+      <p style="font-size:14px;color:var(--slate);line-height:1.7;margin-bottom:28px;max-width:340px;margin-left:auto;margin-right:auto;">${s.body}</p>
+      <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+        ${step>0?`<button class="btn btn-ghost" onclick="closeModal()">Skip tour</button>`:''}
+        <button class="btn btn-primary" style="padding:11px 28px;" onclick="advanceOnboarding()">${s.action}</button>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:20px;">
+        ${steps.map((_,i)=>`<div style="width:${i===step?20:6}px;height:6px;border-radius:3px;background:${i===step?'var(--indigo2)':'var(--border2)'};transition:all 0.3s;"></div>`).join('')}
+      </div>
+    </div>
+  `);
+}
+
+function advanceOnboarding() {
+  const step = (DB.get(currentUser.uid+'_onboarding_step') || 0) + 1;
+  DB.set(currentUser.uid+'_onboarding_step', step);
+  closeModal();
+  if(step < 3) setTimeout(showOnboarding, 200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL SEARCH
+// ═══════════════════════════════════════════════════════════════
+function initSearch() {
+  // Add search to topbar
+  const actions = document.getElementById('topbarActions');
+  // Already handled per-view — global search via keyboard shortcut
+  document.addEventListener('keydown', e => {
+    if((e.metaKey||e.ctrlKey) && e.key==='k') { e.preventDefault(); openSearchPalette(); }
+    if(e.key==='Escape') closeModal();
+  });
+}
+
+function openSearchPalette() {
+  const uid = currentUser.uid;
+  const projects = DB.get(uid+'_projects') || [];
+  const clients  = DB.get(uid+'_clients')  || [];
+  const invoices = DB.get(uid+'_invoices') || [];
+
+  openModal(`
+    <div style="margin-bottom:14px;">
+      <input id="searchInput" class="field-input" placeholder="Search projects, clients, invoices..." style="font-size:15px;padding:13px 16px;" oninput="runSearch(this.value)" autofocus>
+    </div>
+    <div id="searchResults" style="min-height:120px;">
+      <div style="text-align:center;color:var(--slate);font-size:13px;padding:32px 0;">Start typing to search...</div>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById('searchInput')?.focus(),100);
+
+  window.__searchData = [
+    ...projects.map(p=>({type:'Project',icon:'⬡',label:p.name,sub:p.client,view:'projects'})),
+    ...clients.map(c=>({type:'Client',icon:'◉',label:c.name,sub:c.company,view:'clients'})),
+    ...invoices.map(i=>({type:'Invoice',icon:'◷',label:i.id,sub:`${i.client} · ${fmtMoney(i.amount)}`,view:'invoices'})),
+  ];
+}
+
+function runSearch(q) {
+  const res = document.getElementById('searchResults');
+  if(!q.trim()) { res.innerHTML='<div style="text-align:center;color:var(--slate);font-size:13px;padding:32px 0;">Start typing to search...</div>'; return; }
+  const matches = window.__searchData.filter(d=>
+    d.label.toLowerCase().includes(q.toLowerCase()) ||
+    d.sub.toLowerCase().includes(q.toLowerCase())
+  ).slice(0,8);
+  if(!matches.length) { res.innerHTML='<div style="text-align:center;color:var(--slate);font-size:13px;padding:32px 0;">No results found.</div>'; return; }
+  res.innerHTML = matches.map(m=>`
+    <div onclick="closeModal();switchView('${m.view}',document.querySelector('[data-view=${m.view}]'))"
+      style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;cursor:pointer;transition:background 0.15s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      <div style="width:32px;height:32px;border-radius:7px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;">${m.icon}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;">${m.label}</div>
+        <div style="font-size:11px;color:var(--slate);">${m.type} · ${m.sub}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATIONS CENTRE
+// ═══════════════════════════════════════════════════════════════
+function openNotifications() {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const projects = DB.get(uid+'_projects') || [];
+
+  const notifications = [];
+  invoices.filter(i=>i.status==='overdue').forEach(i=>
+    notifications.push({type:'danger',icon:'⚠',title:`Invoice overdue: ${i.id}`,sub:`${i.client} owes ${fmtMoney(i.amount)} — due ${fmtDate(i.due)}`})
+  );
+  invoices.filter(i=>i.status==='pending').forEach(i=>{
+    const days = Math.ceil((new Date(i.due+'T12:00:00')-new Date())/(1000*60*60*24));
+    if(days<=3 && days>=0) notifications.push({type:'warning',icon:'◷',title:`Invoice due soon: ${i.id}`,sub:`${i.client} — due in ${days}d`});
+  });
+  projects.filter(p=>p.deadline).forEach(p=>{
+    const days = Math.ceil((new Date(p.deadline+'T12:00:00')-new Date())/(1000*60*60*24));
+    if(days<=5 && days>=0 && p.status!=='completed') notifications.push({type:'info',icon:'⬡',title:`Deadline approaching: ${p.name}`,sub:`Due in ${days} day${days===1?'':'s'} — ${p.progress}% complete`});
+  });
+  if(notifications.length===0) notifications.push({type:'success',icon:'✓',title:'All caught up!',sub:'No urgent items need your attention.'});
+
+  openModal(`
+    <div class="modal-title">Notifications</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+      ${notifications.map(n=>`
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);">
+          <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+            background:${n.type==='danger'?'rgba(244,63,94,0.1)':n.type==='warning'?'rgba(245,158,11,0.1)':n.type==='info'?'rgba(14,165,233,0.1)':'rgba(16,185,129,0.1)'};
+            color:${n.type==='danger'?'var(--rose)':n.type==='warning'?'var(--amber)':n.type==='info'?'var(--sky)':'var(--emerald)'};">
+            ${n.icon}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${n.title}</div>
+            <div style="font-size:12px;color:var(--slate);">${n.sub}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT — CSV download for invoices and time entries
+// ═══════════════════════════════════════════════════════════════
+function exportInvoicesCSV() {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const header = ['Invoice ID','Client','Amount','Date','Due','Status','Description'];
+  const rows = invoices.map(i=>[i.id,i.client,i.amount,i.date,i.due,i.status,i.description||''].join(','));
+  downloadCSV([header.join(','), ...rows].join('\n'), 'clientli-invoices.csv');
+  toast('Invoices exported as CSV','success');
+}
+
+function exportTimeCSV() {
+  const uid = currentUser.uid;
+  const entries = DB.get(uid+'_time') || [];
+  const header = ['Project','Note','Duration (mins)','Date','Billable','Value ($)'];
+  const rows = entries.map(t=>[t.project, t.note||'', t.duration, t.date, t.billable?'Yes':'No', t.billable?Math.round(t.duration/60*currentUser.rate):0].join(','));
+  downloadCSV([header.join(','), ...rows].join('\n'), 'clientli-time.csv');
+  toast('Time entries exported as CSV','success');
+}
+
+function downloadCSV(content, filename) {
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
+  a.download = filename;
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INVOICE PDF PREVIEW
+// ═══════════════════════════════════════════════════════════════
+function previewInvoice(id) {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const inv = invoices.find(i=>i.id===id);
+  if(!inv) return;
+
+  openModal(`
+    <div class="modal-title">Invoice Preview — ${inv.id}</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div style="background:#fff;color:#1a1a2e;border-radius:10px;padding:32px;margin-top:12px;font-family:'Inter',sans-serif;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;border-bottom:2px solid #f0f0f5;padding-bottom:24px;">
+        <div>
+          <div style="font-size:22px;font-weight:700;color:#4F46E5;letter-spacing:-0.03em;">⚡ Clientli</div>
+          <div style="font-size:13px;color:#666;margin-top:4px;">${currentUser.first} ${currentUser.last}<br>${currentUser.role}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:26px;font-weight:800;color:#1a1a2e;letter-spacing:-0.03em;">${inv.id}</div>
+          <div style="font-size:12px;color:#888;margin-top:4px;">Date: ${fmtDate(inv.date)}<br>Due: ${fmtDate(inv.due)}</div>
+          <div style="display:inline-block;margin-top:8px;padding:3px 12px;border-radius:4px;font-size:11px;font-weight:700;
+            background:${inv.status==='paid'?'#D1FAE5':inv.status==='overdue'?'#FEE2E2':'#FEF9C3'};
+            color:${inv.status==='paid'?'#065F46':inv.status==='overdue'?'#991B1B':'#92400E'};">
+            ${inv.status.toUpperCase()}
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:24px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:6px;">Bill to</div>
+        <div style="font-size:14px;font-weight:700;color:#1a1a2e;">${inv.client}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <thead><tr style="background:#f8f8fc;">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#888;border-radius:6px 0 0 6px;">Description</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#888;border-radius:0 6px 6px 0;">Amount</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:14px 12px;font-size:14px;color:#1a1a2e;border-bottom:1px solid #f0f0f5;">${inv.description||'Professional services'}</td>
+          <td style="padding:14px 12px;text-align:right;font-size:14px;font-weight:700;border-bottom:1px solid #f0f0f5;">${fmtMoney(inv.amount)}</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end;">
+        <div style="background:#f8f8fc;border-radius:8px;padding:16px 24px;min-width:200px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:#666;"><span>Subtotal</span><span>${fmtMoney(inv.amount)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:2px solid #4F46E5;font-size:16px;font-weight:800;color:#1a1a2e;"><span>Total Due</span><span>${fmtMoney(inv.amount)}</span></div>
+        </div>
+      </div>
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #f0f0f5;font-size:12px;color:#888;text-align:center;">Thank you for your business. Please make payment within the agreed terms.</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="exportInvoicesCSV()">Export all CSV</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUICK-ADD TIME ENTRY (manual, without timer)
+// ═══════════════════════════════════════════════════════════════
+function openManualTimeEntry() {
+  const uid = currentUser.uid;
+  const projects = (DB.get(uid+'_projects')||[]).filter(p=>p.status!=='completed');
+  openModal(`
+    <div class="modal-title">Add Time Entry</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-form">
+      <div class="field"><label>Project</label>
+        <select id="mteProj">
+          <option value="">Select project...</option>
+          ${projects.map(p=>`<option value="${p.id}|${p.name}">${p.name} — ${p.client}</option>`).join('')}
+        </select>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Duration (hours)</label><input type="number" id="mteHours" placeholder="2" min="0" max="24" step="0.5"></div>
+        <div class="field"><label>Duration (minutes)</label><input type="number" id="mteMins" placeholder="30" min="0" max="59"></div>
+      </div>
+      <div class="field"><label>Date</label><input type="date" id="mteDate" value="${dateStr(0)}"></div>
+      <div class="field"><label>Note</label><input id="mteNote" placeholder="What did you work on?"></div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="mteBillable" checked style="accent-color:var(--indigo);width:15px;height:15px;">
+          Mark as billable
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveManualTimeEntry()">Add entry</button>
+      </div>
+    </div>
+  `);
+}
+
+function saveManualTimeEntry() {
+  const uid = currentUser.uid;
+  const [projId, projName] = (document.getElementById('mteProj').value || '|').split('|');
+  const hours = parseFloat(document.getElementById('mteHours').value) || 0;
+  const mins  = parseInt(document.getElementById('mteMins').value)  || 0;
+  const total = Math.round(hours*60) + mins;
+  const date  = document.getElementById('mteDate').value || dateStr(0);
+  const note  = document.getElementById('mteNote').value.trim();
+  const billable = document.getElementById('mteBillable').checked;
+  if(!projId || total < 1) { toast('Select a project and enter duration','error'); return; }
+  const entries = DB.get(uid+'_time') || [];
+  entries.unshift({id:'t'+Date.now(), project:projName, projectId:projId, duration:total, date, billable, note});
+  DB.set(uid+'_time', entries);
+  closeModal(); toast(`${fmtDuration(total)} added ✓`,'success');
+  renderTimekeeping(document.getElementById('contentArea'), document.getElementById('topbarActions'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOPBAR ENHANCEMENTS — bell + search icon in header
+// ═══════════════════════════════════════════════════════════════
+function enhanceTopbar() {
+  const topbar = document.querySelector('.topbar');
+  if(!topbar || document.getElementById('topbarExtras')) return;
+  const extras = document.createElement('div');
+  extras.id = 'topbarExtras';
+  extras.style.cssText = 'display:flex;align-items:center;gap:6px;margin-left:16px;';
+  extras.innerHTML = `
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="openSearchPalette()" title="Search (⌘K)" style="font-size:13px;">🔍</button>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="openNotifications()" title="Notifications" style="font-size:13px;position:relative;">
+      🔔<span id="notifDot" style="position:absolute;top:3px;right:3px;width:6px;height:6px;background:var(--rose);border-radius:50%;display:none;"></span>
+    </button>
+  `;
+  const actions = document.getElementById('topbarActions');
+  topbar.insertBefore(extras, actions);
+  updateNotifDot();
+}
+
+function updateNotifDot() {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  const hasUrgent = invoices.some(i=>i.status==='overdue');
+  const dot = document.getElementById('notifDot');
+  if(dot) dot.style.display = hasUrgent ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED INVOICE VIEW with preview button
+// ═══════════════════════════════════════════════════════════════
+const _origRenderInvoices = renderInvoices;
+renderInvoices = function(area, actions) {
+  const uid = currentUser.uid;
+  const invoices = DB.get(uid+'_invoices') || [];
+  actions.innerHTML = `
+    <button class="btn btn-secondary" onclick="exportInvoicesCSV()">↓ Export CSV</button>
+    <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ New Invoice</button>
+  `;
+
+  const paid = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+  const pending = invoices.filter(i=>i.status==='pending').reduce((s,i)=>s+i.amount,0);
+  const overdue = invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0);
+
+  area.innerHTML = `
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--emerald);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Collected</div>
+        <div class="stat-val" style="font-size:26px;color:var(--emerald);">${fmtMoney(paid)}</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:4px;">${invoices.filter(i=>i.status==='paid').length} invoices</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--amber);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Pending</div>
+        <div class="stat-val" style="font-size:26px;color:var(--amber);">${fmtMoney(pending)}</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:4px;">${invoices.filter(i=>i.status==='pending').length} invoices</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-top" style="background:var(--rose);"></div>
+        <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Overdue</div>
+        <div class="stat-val" style="font-size:26px;color:var(--rose);">${fmtMoney(overdue)}</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:4px;">${invoices.filter(i=>i.status==='overdue').length} invoices</div>
+      </div>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead><tr>
+          <th>Invoice</th><th>Client</th><th>Amount</th><th>Date</th><th>Due</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${invoices.length===0 ? `<tr><td colspan="7">
+            <div class="empty-state" style="padding:40px;">
+              <div class="empty-state-icon">◷</div>
+              <h3>No invoices yet</h3>
+              <p>Create your first invoice to start getting paid.</p>
+              <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Create invoice</button>
+            </div></td></tr>` :
+          invoices.map(inv=>`
+            <tr>
+              <td><strong style="color:var(--indigo3);cursor:pointer;" onclick="previewInvoice('${inv.id}')">${inv.id}</strong></td>
+              <td>${inv.client}</td>
+              <td><strong>${fmtMoney(inv.amount)}</strong></td>
+              <td style="color:var(--slate);">${fmtDate(inv.date)}</td>
+              <td style="color:var(--slate);">${fmtDate(inv.due)}</td>
+              <td>${getInvBadge(inv.status)}</td>
+              <td>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                  <button class="btn btn-ghost btn-sm" onclick="previewInvoice('${inv.id}')">Preview</button>
+                  ${inv.status!=='paid'?`<button class="btn btn-ghost btn-sm" style="color:var(--emerald);" onclick="markPaid('${inv.id}')">✓ Paid</button>`:''}
+                  <button class="btn btn-danger btn-sm btn-icon" onclick="deleteInvoice('${inv.id}')" title="Delete">✕</button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED TIME TRACKING with manual entry button
+// ═══════════════════════════════════════════════════════════════
+const _origRenderTime = renderTimekeeping;
+renderTimekeeping = function(area, actions) {
+  actions.innerHTML = `
+    <button class="btn btn-secondary" onclick="exportTimeCSV()">↓ Export CSV</button>
+    <button class="btn btn-secondary" onclick="openManualTimeEntry()">+ Manual entry</button>
+  `;
+  _origRenderTime(area, actions);
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED ANALYTICS with export
+// ═══════════════════════════════════════════════════════════════
+const _origRenderAnalytics = renderAnalytics;
+renderAnalytics = function(area, actions) {
+  actions.innerHTML = `<button class="btn btn-secondary" onclick="exportInvoicesCSV()">↓ Export data</button>`;
+  _origRenderAnalytics(area, actions);
+};
+
+// ═══════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS HELP
+// ═══════════════════════════════════════════════════════════════
+function showShortcuts() {
+  openModal(`
+    <div class="modal-title">Keyboard Shortcuts</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+      ${[
+        ['⌘K','Open search'],
+        ['Esc','Close modal / dialog'],
+        ['⌘ + click','Open in new tab (links)'],
+      ].map(([k,d])=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border-radius:7px;">
+          <span style="font-size:13px;color:var(--slate);">${d}</span>
+          <kbd style="padding:4px 10px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;font-size:12px;font-family:monospace;">${k}</kbd>
+        </div>
+      `).join('')}
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED SETTINGS with shortcuts + data management
+// ═══════════════════════════════════════════════════════════════
+const _origRenderSettings = renderSettings;
+renderSettings = function(area, actions) {
+  _origRenderSettings(area, actions);
+  // Append extra cards
+  area.querySelector('div').insertAdjacentHTML('beforeend', `
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><h3>Data & Export</h3></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+          <div><div style="font-size:13px;font-weight:600;">Export invoices</div><div style="font-size:12px;color:var(--slate);">Download all invoices as CSV</div></div>
+          <button class="btn btn-secondary btn-sm" onclick="exportInvoicesCSV()">↓ Download</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+          <div><div style="font-size:13px;font-weight:600;">Export time entries</div><div style="font-size:12px;color:var(--slate);">Download all time logs as CSV</div></div>
+          <button class="btn btn-secondary btn-sm" onclick="exportTimeCSV()">↓ Download</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+          <div><div style="font-size:13px;font-weight:600;">Keyboard shortcuts</div><div style="font-size:12px;color:var(--slate);">View available shortcuts</div></div>
+          <button class="btn btn-secondary btn-sm" onclick="showShortcuts()">View</button>
+        </div>
+      </div>
+    </div>
+  `);
+};
+
+// ═══════════════════════════════════════════════════════════════
+// URL PARAM PRE-FILL — from marketing site CTA
+// ═══════════════════════════════════════════════════════════════
+function prefillFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get('email');
+  if(email) {
+    switchAuthTab('register');
+    setTimeout(() => {
+      const el = document.getElementById('regEmail');
+      if(el) el.value = email;
+    }, 100);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STRIPE — PAYMENTS
+// ═══════════════════════════════════════════════════════════════
+function openUpgradeModal() {
+  const plan = currentUser?.plan || 'starter';
+  openModal(`
+    <div class="modal-title">Upgrade Clientli</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+
+      <!-- Pro card -->
+      <div style="background:linear-gradient(180deg,rgba(79,70,229,0.1) 0%,var(--bg3) 100%);border:1px solid rgba(79,70,229,0.35);border-radius:14px;padding:22px;position:relative;">
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--indigo);color:#fff;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">Most popular</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate);margin-bottom:10px;">Pro</div>
+        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;">$19<span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:var(--slate);">/mo</span></div>
+        <div style="font-size:11px;color:var(--slate);margin-bottom:18px;">or $15/mo billed annually</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;font-size:12px;color:var(--ice2);">
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Unlimited projects & clients</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Unlimited invoices + auto-reminders</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>AI assistant (Genie powered)</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Advanced analytics</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Priority support</div>
+        </div>
+        ${plan === 'pro' ?
+          `<button class="btn btn-secondary" style="width:100%;padding:11px;" onclick="openCustomerPortal()">Manage subscription</button>` :
+          `<button class="btn btn-primary" style="width:100%;padding:11px;" onclick="startCheckout('pro_monthly')">Upgrade to Pro →</button>`
+        }
+      </div>
+
+      <!-- Studio card -->
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:22px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate);margin-bottom:10px;">Studio</div>
+        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;">$49<span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:var(--slate);">/mo</span></div>
+        <div style="font-size:11px;color:var(--slate);margin-bottom:18px;">up to 5 team members</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;font-size:12px;color:var(--ice2);">
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Everything in Pro</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>5 team seats included</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Shared client workspace</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>White-label invoices</div>
+          <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Xero / QuickBooks sync</div>
+        </div>
+        ${plan === 'studio' ?
+          `<button class="btn btn-secondary" style="width:100%;padding:11px;" onclick="openCustomerPortal()">Manage subscription</button>` :
+          `<button class="btn btn-secondary" style="width:100%;padding:11px;" onclick="startCheckout('studio')">Upgrade to Studio →</button>`
+        }
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:11px;color:var(--slate2);margin-top:14px;">
+      Secured by Stripe. Cancel anytime. 30-day money-back guarantee. We never take % of your invoices.
+    </p>
+  `);
+}
+
+async function startCheckout(priceKey) {
+  if(DEV_MODE) {
+    toast('Payments require production deployment + Stripe setup. See README.', 'info');
+    closeModal();
+    return;
+  }
+
+  const btn = event.target;
+  btn.textContent = 'Loading...'; btn.disabled = true;
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if(firebaseIdToken) headers['Authorization'] = `Bearer ${firebaseIdToken}`;
+
+    const res = await fetch(`${WORKER_URL}/api/stripe/checkout`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        priceId:    STRIPE_PRICES[priceKey],
+        successUrl: `${location.origin}/app.html?upgraded=1`,
+        cancelUrl:  `${location.origin}/app.html`,
+      }),
+    });
+
+    const data = await res.json();
+    if(data.url) {
+      window.location.href = data.url; // Redirect to Stripe Checkout
+    } else {
+      throw new Error(data.error || 'Checkout failed');
+    }
+  } catch(e) {
+    toast('Checkout error: ' + e.message, 'error');
+    btn.textContent = 'Upgrade'; btn.disabled = false;
+  }
+}
+
+async function openCustomerPortal() {
+  if(DEV_MODE) { toast('Customer portal requires production deployment.','info'); return; }
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if(firebaseIdToken) headers['Authorization'] = `Bearer ${firebaseIdToken}`;
+    const res = await fetch(`${WORKER_URL}/api/stripe/portal`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ customerId: currentUser.stripeCustomerId, returnUrl: location.href }),
+    });
+    const data = await res.json();
+    if(data.url) window.location.href = data.url;
+    else throw new Error(data.error);
+  } catch(e) { toast('Portal error: ' + e.message, 'error'); }
+}
+
+// Handle return from successful Stripe checkout
+function checkUpgradeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('upgraded') === '1') {
+    // Stripe webhook will have updated Firestore — reload user profile
+    if(!DEV_MODE && auth?.currentUser) {
+      db.collection('users').doc(auth.currentUser.uid).get().then(doc => {
+        if(doc.exists) { currentUser = { ...currentUser, ...doc.data() }; updatePlanBadge(); }
+      });
+    }
+    toast('🎉 Welcome to Pro! All features are now unlocked.', 'success');
+    // Clean URL
+    window.history.replaceState({}, '', location.pathname);
+  }
+}
+
+// Show current plan badge in sidebar
+function updatePlanBadge() {
+  const plan = currentUser?.plan || 'starter';
+  const el = document.getElementById('sidebarPlanBadge');
+  if(el) {
+    el.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+    el.style.display = plan === 'starter' ? 'none' : 'inline-flex';
+  }
+  // Update upgrade box text
+  const upgradeBox = document.querySelector('.upgrade-box h4');
+  if(upgradeBox && plan !== 'starter') upgradeBox.textContent = `You're on ${plan.charAt(0).toUpperCase()+plan.slice(1)} ✓`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAN GUARDS — limit starter users
+// ═══════════════════════════════════════════════════════════════
+function checkPlanLimit(type) {
+  if(DEV_MODE || !currentUser) return true; // always allow in dev
+  const plan = currentUser.plan || 'starter';
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.starter;
+  if(limits[type] === -1) return true; // unlimited
+
+  const uid = currentUser.uid;
+  const counts = { projects: (DB.get(uid+'_projects')||[]).length, invoices: (DB.get(uid+'_invoices')||[]).length };
+  if(counts[type] >= limits[type]) {
+    openUpgradeModal();
+    toast(`Free plan limit reached — upgrade to add more ${type}`, 'warning');
+    return false;
+  }
+  return true;
+}
+
+// Wrap project and invoice creation with plan check
+const _origCreateProject = createProject;
+createProject = function() {
+  if(!checkPlanLimit('projects')) return;
+  _origCreateProject();
+};
+const _origCreateInvoice = createInvoice;
+createInvoice = function() {
+  if(!checkPlanLimit('invoices')) return;
+  _origCreateInvoice();
+};
+
+// ═══════════════════════════════════════════════════════════════
+// FIRESTORE DATA SYNC — save/load real data in prod
+// ═══════════════════════════════════════════════════════════════
+const FIRESTORE_COLLECTIONS = ['projects','clients','invoices','time','proposals'];
+
+async function syncToFirestore(collection, data) {
+  if(DEV_MODE || !db || !currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid)
+      .collection(collection).doc('data')
+      .set({ items: data, updatedAt: new Date().toISOString() });
+  } catch(e) { console.warn('Firestore sync error:', e); }
+}
+
+async function loadFromFirestore(collection) {
+  if(DEV_MODE || !db || !currentUser) return null;
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid)
+      .collection(collection).doc('data').get();
+    return doc.exists ? doc.data().items : null;
+  } catch(e) { console.warn('Firestore load error:', e); return null; }
+}
+
+// Patch DB.set to also sync to Firestore for user collections
+const _origDBset = DB.set;
+DB.set = function(key, value) {
+  _origDBset(key, value);
+  // Check if this is a user data collection
+  if(currentUser && !DEV_MODE) {
+    const uid = currentUser.uid;
+    for(const col of FIRESTORE_COLLECTIONS) {
+      if(key === `${uid}_${col}`) {
+        syncToFirestore(col, value); // fire and forget
+        break;
+      }
+    }
+  }
+};
+
+// Load Firestore data on login (override localStorage seed data)
+async function hydrateFromFirestore() {
+  if(DEV_MODE || !db || !currentUser) return;
+  const uid = currentUser.uid;
+  for(const col of FIRESTORE_COLLECTIONS) {
+    const data = await loadFromFirestore(col);
+    if(data && data.length > 0) {
+      // Firestore has real data — use it instead of seed
+      _origDBset(`${uid}_${col}`, data);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE SIGN-IN (bonus — easy one-click auth)
+// ═══════════════════════════════════════════════════════════════
+async function signInWithGoogle() {
+  if(DEV_MODE) { toast('Google sign-in requires production Firebase setup.','info'); return; }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const cred = await auth.signInWithPopup(provider);
+    const fbUser = cred.user;
+    firebaseIdToken = await fbUser.getIdToken();
+    const nameParts = (fbUser.displayName||'User').split(' ');
+    const first = nameParts[0], last = nameParts.slice(1).join(' ')||'';
+    // Create Firestore profile if new user
+    const doc = await db.collection('users').doc(fbUser.uid).get();
+    if(!doc.exists) {
+      const profile = { first, last, email: fbUser.email, role:'Freelancer', rate:100, plan:'starter', createdAt: new Date().toISOString() };
+      await db.collection('users').doc(fbUser.uid).set(profile);
+      currentUser = { uid: fbUser.uid, ...profile };
+      generateSeedData(fbUser.uid);
+    } else {
+      currentUser = { uid: fbUser.uid, email: fbUser.email, ...doc.data() };
+    }
+    bootApp();
+  } catch(e) { toast('Google sign-in failed: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADD GOOGLE SIGN-IN BUTTON TO AUTH SCREEN
+// ═══════════════════════════════════════════════════════════════
+function addGoogleSignIn() {
+  const loginForm = document.getElementById('loginForm');
+  if(!loginForm || loginForm.querySelector('.btn-google')) return;
+  const divider = document.createElement('div');
+  divider.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+      <div style="flex:1;height:1px;background:var(--border2);"></div>
+      <span style="font-size:11px;color:var(--slate2);">or continue with</span>
+      <div style="flex:1;height:1px;background:var(--border2);"></div>
+    </div>
+    <button class="btn-google" onclick="signInWithGoogle()" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ice2);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Inter',sans-serif;transition:all 0.2s;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='var(--bg3)'">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.615 24 12.255 24z"/><path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 0 0 0 10.76l3.98-3.09z"/><path fill="#EA4335" d="M12.255 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C18.205 1.19 15.495 0 12.255 0c-4.64 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+      Continue with Google
+    </button>
+  `;
+  loginForm.appendChild(divider);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PASSWORD RESET
+// ═══════════════════════════════════════════════════════════════
+function openPasswordReset() {
+  openModal(`
+    <div class="modal-title">Reset Password</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <p style="font-size:13px;color:var(--slate);margin-bottom:18px;">Enter your email and we'll send a reset link.</p>
+    <div class="modal-form">
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" id="resetEmail" placeholder="you@example.com">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="sendPasswordReset()">Send reset link</button>
+      </div>
+    </div>
+  `);
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  if(!email) { toast('Enter your email address', 'error'); return; }
+  if(DEV_MODE) { toast('Password reset requires production Firebase setup.', 'info'); closeModal(); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    toast('Reset link sent — check your inbox', 'success');
+    closeModal();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// Add "Forgot password?" link to login form
+function addForgotPasswordLink() {
+  const loginForm = document.getElementById('loginForm');
+  if(!loginForm || loginForm.querySelector('.forgot-link')) return;
+  const link = document.createElement('div');
+  link.innerHTML = `<div class="forgot-link" style="text-align:right;margin-top:-6px;"><button onclick="openPasswordReset()" style="background:none;border:none;color:var(--indigo3);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;">Forgot password?</button></div>`;
+  // Insert after password field
+  const pwdField = loginForm.querySelector('input[type="password"]')?.closest('.field');
+  if(pwdField) pwdField.insertAdjacentElement('afterend', link);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED SETTINGS — add plan info + billing section
+// ═══════════════════════════════════════════════════════════════
+const _origRenderSettingsFull = renderSettings;
+renderSettings = function(area, actions) {
+  _origRenderSettingsFull(area, actions);
+
+  const plan = currentUser?.plan || 'starter';
+  const planLabel = { starter:'Starter (Free)', pro:'Pro', studio:'Studio' }[plan] || plan;
+
+  // Inject billing card
+  area.querySelector('div').insertAdjacentHTML('afterbegin', `
+    <div class="card" style="margin-bottom:16px;border-color:${plan!=='starter'?'rgba(79,70,229,0.25)':'var(--border)'};">
+      <div class="card-header">
+        <h3>Plan & Billing</h3>
+        <span class="badge ${plan==='starter'?'badge-muted':plan==='pro'?'badge-indigo':'badge-success'}">${planLabel}</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div style="font-size:14px;font-weight:600;">Current plan: ${planLabel}</div>
+            <div style="font-size:12px;color:var(--slate);margin-top:3px;">
+              ${plan==='starter' ? 'Free · 3 projects · 5 invoices/mo · No AI features' :
+                plan==='pro'     ? 'Pro · $19/mo · Unlimited everything · AI assistant included' :
+                                   'Studio · $49/mo · 5 team seats · All features'}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            ${plan==='starter' ? `<button class="btn btn-primary btn-sm" onclick="openUpgradeModal()">Upgrade →</button>` :
+              `<button class="btn btn-secondary btn-sm" onclick="openCustomerPortal()">Manage billing</button>`}
+          </div>
+        </div>
+        ${plan==='starter' ? `
+          <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;font-size:12px;">
+              <div><div style="font-weight:600;color:var(--ice2);">${(DB.get(currentUser.uid+'_projects')||[]).length} / 3</div><div style="color:var(--slate);">Projects</div></div>
+              <div><div style="font-weight:600;color:var(--ice2);">${(DB.get(currentUser.uid+'_invoices')||[]).length} / 5</div><div style="color:var(--slate);">Invoices</div></div>
+              <div><div style="font-weight:600;color:var(--rose);">✗</div><div style="color:var(--slate);">AI features</div></div>
+            </div>
+          </div>
+        ` : `
+          <div style="background:rgba(79,70,229,0.06);border:1px solid rgba(79,70,229,0.15);border-radius:8px;padding:12px;font-size:12px;color:var(--indigo3);">
+            ✓ Unlimited projects · ✓ Unlimited invoices · ✓ AI assistant · ✓ Priority support
+          </div>
+        `}
+      </div>
+    </div>
+  `);
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SIDEBAR UPGRADE BUTTON — wire to modal
+// ═══════════════════════════════════════════════════════════════
+function wireUpgradeSidebarBtn() {
+  const btn = document.querySelector('.btn-upgrade');
+  if(btn) btn.onclick = openUpgradeModal;
+  updatePlanBadge();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT — COMPLETE
+// ═══════════════════════════════════════════════════════════════
+prefillFromURL();
+checkSession();
+
+// After boot, wire up all extras
+const _origBootApp = bootApp;
+bootApp = async function() {
+  _origBootApp();
+
+  setTimeout(async () => {
+    enhanceTopbar();
+    initSearch();
+    addGoogleSignIn();
+    addForgotPasswordLink();
+    wireUpgradeSidebarBtn();
+    checkUpgradeReturn();
+
+    // Load Firestore data if in prod
+    if(!DEV_MODE) await hydrateFromFirestore();
+
+    // Onboarding for first-time users
+    const isNewUser = !DB.get(currentUser.uid+'_onboarding_step');
+    if(isNewUser && DB.get(currentUser.uid+'_seeded')) {
+      setTimeout(showOnboarding, 800);
+    }
+  }, 150);
+};
+</script>
+</body>
+</html>
