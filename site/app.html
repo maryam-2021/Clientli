@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clientli — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <!-- Firebase v10 SDK (modular via CDN compat build) -->
@@ -187,7 +187,7 @@ h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-0.025
 .stat-card:hover{border-color:var(--border2);}
 .stat-card-top{height:2px;position:absolute;top:0;left:0;right:0;}
 .stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:14px;}
-.stat-val{font-family:'Instrument Serif',Georgia,serif;font-size:32px;font-weight:400;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;}
+.stat-val{font-family:'Outfit',sans-serif;font-size:32px;font-weight:800;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;}
 .stat-label{font-size:12px;color:var(--slate);letter-spacing:-0.01em;}
 .stat-change{font-size:11px;font-weight:600;margin-top:6px;}
 
@@ -254,7 +254,7 @@ h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-0.025
 @keyframes aiPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1.2);}}
 
 /* ── TIMER ── */
-.timer-display{font-family:'Instrument Serif',Georgia,serif;font-size:52px;font-weight:400;letter-spacing:0.02em;text-align:center;background:linear-gradient(130deg,#818CF8,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;padding:10px 0;}
+.timer-display{font-family:'Outfit',sans-serif;font-size:52px;font-weight:800;letter-spacing:0.02em;text-align:center;background:linear-gradient(130deg,#818CF8,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;padding:10px 0;}
 
 /* ── GRID LAYOUTS ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -1351,7 +1351,7 @@ function renderProposals(area, actions) {
           </div>
           <h4 style="margin-bottom:4px;">${p.title}</h4>
           <div style="font-size:12px;color:var(--slate);margin-bottom:16px;">${p.client}</div>
-          <div style="font-family:'Instrument Serif',Georgia,serif;font-size:28px;font-weight:400;letter-spacing:-0.02em;margin-bottom:16px;">${fmtMoney(p.value)}</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-bottom:16px;">${fmtMoney(p.value)}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             ${p.status==='draft'?`<button class="btn btn-primary btn-sm" onclick="sendProposal('${p.id}')">Send →</button>`:''}
             <button class="btn btn-secondary btn-sm" onclick="openProposalDetail('${p.id}')">View</button>
@@ -2808,7 +2808,7 @@ function openUpgradeModal() {
       <div style="background:linear-gradient(180deg,rgba(79,70,229,0.1) 0%,var(--bg3) 100%);border:1px solid rgba(79,70,229,0.35);border-radius:14px;padding:22px;position:relative;">
         <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--indigo);color:#fff;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">Most popular</div>
         <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate);margin-bottom:10px;">Pro</div>
-        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;">$19<span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:var(--slate);">/mo</span></div>
+        <div style="font-family:'Outfit',sans-serif;font-size:40px;font-weight:800;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;">$19<span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:var(--slate);">/mo</span></div>
         <div style="font-size:11px;color:var(--slate);margin-bottom:18px;">or $15/mo billed annually</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;font-size:12px;color:var(--ice2);">
           <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Unlimited projects & clients</div>
@@ -2826,7 +2826,7 @@ function openUpgradeModal() {
       <!-- Studio card -->
       <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:22px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate);margin-bottom:10px;">Studio</div>
-        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;">$49<span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:var(--slate);">/mo</span></div>
+        <div style="font-family:'Outfit',sans-serif;font-size:40px;font-weight:800;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;">$49<span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:var(--slate);">/mo</span></div>
         <div style="font-size:11px;color:var(--slate);margin-bottom:18px;">up to 5 team members</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;font-size:12px;color:var(--ice2);">
           <div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--emerald);flex-shrink:0;margin-top:1px;">✓</span>Everything in Pro</div>
