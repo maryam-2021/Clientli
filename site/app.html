@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clientli — Dashboard</title>
+<title>AI Clientli — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -312,7 +312,7 @@ h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-0.025
   <div class="auth-card">
     <div class="auth-logo">
       <div class="auth-logo-mark">⚡</div>
-      Clientli
+      AI Clientli
     </div>
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchAuthTab('login')">Sign in</div>
@@ -331,9 +331,9 @@ h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-0.025
           <label class="field-label">Password</label>
           <input class="field-input" type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
-        <button class="btn-auth" onclick="doLogin()">Sign in to Clientli →</button>
+        <button class="btn-auth" onclick="doLogin()">Sign in to AI Clientli →</button>
       </div>
-      <p class="auth-note">Demo account: <strong>demo@clientli.app</strong> / <strong>demo1234</strong></p>
+      <p class="auth-note">Demo account: <strong>demo@aiclientli.com</strong> / <strong>demo1234</strong></p>
     </div>
 
     <!-- REGISTER -->
@@ -391,7 +391,7 @@ h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-0.025
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-mark">⚡</div>
-      Clientli
+      AI Clientli
     </div>
     <div class="sidebar-user">
       <div class="sidebar-av" id="sidebarAv">AK</div>
@@ -534,7 +534,7 @@ let firebaseIdToken = null; // cached JWT for Worker calls
 
 // Dev mode: seed demo account
 if(DEV_MODE) {
-  DB.set('user_demo', {uid:'demo', first:'Alex', last:'Kovacs', email:'demo@clientli.app', pwd:'demo1234', role:'Product Designer', rate:100, plan:'pro'});
+  DB.set('user_demo', {uid:'demo', first:'Alex', last:'Kovacs', email:'demo@aiclientli.com', pwd:'demo1234', role:'Product Designer', rate:100, plan:'pro'});
 }
 
 function switchAuthTab(tab) {
@@ -584,7 +584,7 @@ async function doLogin() {
   } catch(e) {
     err.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'');
     err.style.display = 'block';
-    btn.textContent = 'Sign in to Clientli →'; btn.disabled = false;
+    btn.textContent = 'Sign in to AI Clientli →'; btn.disabled = false;
   }
 }
 
@@ -626,7 +626,7 @@ async function doRegister() {
       currentUser = { uid: fbUser.uid, ...profile };
       generateSeedData(fbUser.uid);
     }
-    toast('Account created! Welcome to Clientli 🎉','success');
+    toast('Account created! Welcome to AI Clientli 🎉','success');
     bootApp();
   } catch(e) {
     err.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'');
@@ -2330,7 +2330,7 @@ function showOnboarding() {
   const steps = [
     {
       icon:'⚡',
-      title:`Welcome to Clientli, ${currentUser.first}!`,
+      title:`Welcome to AI Clientli, ${currentUser.first}!`,
       body:`Your freelance command center is ready. We've loaded some sample data so you can explore. Let's take a quick tour — it'll take 30 seconds.`,
       action:'Next →',
     },
@@ -2344,7 +2344,7 @@ function showOnboarding() {
       icon:'✦',
       title:'AI is built right in',
       body:`Go to AI Assistant to generate proposals, invoice copy, client emails, and business insights — all powered by Genie, directly inside your workspace.`,
-      action:'Start using Clientli →',
+      action:'Start using AI Clientli →',
     },
   ];
   const s = steps[step];
@@ -2514,7 +2514,7 @@ function previewInvoice(id) {
     <div style="background:#fff;color:#1a1a2e;border-radius:10px;padding:32px;margin-top:12px;font-family:'Inter',sans-serif;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;border-bottom:2px solid #f0f0f5;padding-bottom:24px;">
         <div>
-          <div style="font-size:22px;font-weight:700;color:#4F46E5;letter-spacing:-0.03em;">⚡ Clientli</div>
+          <div style="font-size:22px;font-weight:700;color:#4F46E5;letter-spacing:-0.03em;">⚡ AI Clientli</div>
           <div style="font-size:13px;color:#666;margin-top:4px;">${currentUser.first} ${currentUser.last}<br>${currentUser.role}</div>
         </div>
         <div style="text-align:right;">
@@ -2799,7 +2799,7 @@ function prefillFromURL() {
 function openUpgradeModal() {
   const plan = currentUser?.plan || 'starter';
   openModal(`
-    <div class="modal-title">Upgrade Clientli</div>
+    <div class="modal-title">Upgrade AI Clientli</div>
     <button class="modal-close" onclick="closeModal()">✕</button>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">

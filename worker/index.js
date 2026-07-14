@@ -15,9 +15,9 @@
 
 // ── Allowed CORS origins — add your domain here
 const ALLOWED_ORIGINS = [
-  'https://clientli.app',
-  'https://www.clientli.app',
-  'https://clientli.pages.dev',         // Cloudflare Pages default domain
+  'https://aiclientli.com',
+  'https://www.aiclientli.com',
+  'https://aiclientli.pages.dev',         // Cloudflare Pages default domain
   'http://localhost:3000',
   'http://localhost:5500',
   'http://localhost:8000',
@@ -146,8 +146,8 @@ async function handleStripeCheckout(request, env) {
     'client_reference_id':            user.uid,
     'metadata[firebase_uid]':         user.uid,
     'allow_promotion_codes':          'true',
-    'success_url':                    successUrl || 'https://clientli.app/app.html?upgraded=1',
-    'cancel_url':                     cancelUrl  || 'https://clientli.app/app.html',
+    'success_url':                    successUrl || 'https://aiclientli.com/app.html?upgraded=1',
+    'cancel_url':                     cancelUrl  || 'https://aiclientli.com/app.html',
     'subscription_data[metadata][firebase_uid]': user.uid,
   });
 
@@ -188,7 +188,7 @@ async function handleStripePortal(request, env) {
     },
     body: new URLSearchParams({
       customer:   customerId,
-      return_url: returnUrl || 'https://clientli.app/app.html',
+      return_url: returnUrl || 'https://aiclientli.com/app.html',
     }),
   });
 
@@ -241,7 +241,7 @@ async function handleStripeWebhook(request, env) {
 async function verifyFirebaseToken(request, env) {
   // Local Development bypass
   if (env.ENVIRONMENT === 'development') {
-    return { uid: 'demo-user', email: 'demo@clientli.app' };
+    return { uid: 'demo-user', email: 'demo@aiclientli.com' };
   }
 
   try {
