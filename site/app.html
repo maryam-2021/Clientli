@@ -533,7 +533,7 @@ let currentUser = null;
 let firebaseIdToken = null; // cached JWT for Worker calls
 
 // Dev mode: seed demo account
-if(DEV_MODE && !DB.get('user_demo')) {
+if(DEV_MODE) {
   DB.set('user_demo', {uid:'demo', first:'Alex', last:'Kovacs', email:'demo@clientli.app', pwd:'demo1234', role:'Product Designer', rate:100, plan:'pro'});
 }
 
@@ -545,7 +545,7 @@ function switchAuthTab(tab) {
 
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const pwd   = document.getElementById('loginPwd').value;
+  const pwd   = document.getElementById('loginPwd').value.trim();
   const err   = document.getElementById('loginError');
   const btn   = document.querySelector('#loginForm .btn-auth');
   err.style.display = 'none';
@@ -554,8 +554,17 @@ async function doLogin() {
   try {
     if(DEV_MODE) {
       // ── DEV: localStorage auth
-      const users = Object.keys(localStorage).filter(k=>k.startsWith('cl_user_')).map(k=>JSON.parse(localStorage.getItem(k)));
-      const user  = users.find(u=>u.email.toLowerCase()===email && u.pwd===pwd);
+      const users = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k.startsWith('cl_user_')) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(k));
+            if (parsed && parsed.email) users.push(parsed);
+          } catch(e) {}
+        }
+      }
+      const user = users.find(u=>u.email.toLowerCase()===email && u.pwd===pwd);
       if(!user) throw new Error('Invalid email or password.');
       currentUser = user;
       DB.set('session', user.uid);
