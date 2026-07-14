@@ -1422,25 +1422,30 @@ function renderAI(area, actions) {
           <h4>Client Email</h4>
           <p style="font-size:12px;color:var(--slate);margin-top:4px;">Draft professional follow-ups, updates, and negotiations.</p>
         </div>
-        <div class="project-card" onclick="setAIMode('quote')" id="aiModeQuote" style="cursor:pointer;">
+        <div class="project-card" onclick="setAIMode('paymentChase')" id="aiModePaymentChase" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">🕒</div>
+          <h4>Payment Chase</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Escalating reminders for overdue invoices — polite, firm, final.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('scopeCreep')" id="aiModeScopeCreep" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">⚠️</div>
+          <h4>Scope Creep Email</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Flag work outside the agreed scope and price the difference.</p>
+        </div>
+        <div class="project-card" onclick="setAIMode('quoteBuilder')" id="aiModeQuoteBuilder" style="cursor:pointer;">
           <div style="font-size:24px;margin-bottom:10px;">💰</div>
-          <h4>Project Quote Builder</h4>
-          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Calculate a quote with custom rationale for your client.</p>
+          <h4>Quote Builder</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">A price, plus the reasoning to send with it.</p>
         </div>
-        <div class="project-card" onclick="setAIMode('evaluator')" id="aiModeEvaluator" style="cursor:pointer;">
-          <div style="font-size:24px;margin-bottom:10px;">🔍</div>
-          <h4>Client Evaluator</h4>
-          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Analyze a client brief/message for red and green flags.</p>
+        <div class="project-card" onclick="setAIMode('rateIncrease')" id="aiModeRateIncrease" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">📈</div>
+          <h4>Rate Increase Notice</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Announce a rate change with confidence.</p>
         </div>
-        <div class="project-card" onclick="setAIMode('polisher')" id="aiModePolisher" style="cursor:pointer;">
-          <div style="font-size:24px;margin-bottom:10px;">✨</div>
-          <h4>Feedback Polisher</h4>
-          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Turn rough client feedback into a polished case study blurb.</p>
-        </div>
-        <div class="project-card" onclick="setAIMode('contract')" id="aiModeContract" style="cursor:pointer;">
-          <div style="font-size:24px;margin-bottom:10px;">⚖️</div>
-          <h4>Contract Clause Generator</h4>
-          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Draft starting-point contract clauses for your projects.</p>
+        <div class="project-card" onclick="setAIMode('redFlag')" id="aiModeRedFlag" style="cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:10px;">🚩</div>
+          <h4>Client Red-Flag Checker</h4>
+          <p style="font-size:12px;color:var(--slate);margin-top:4px;">Paste a client's first message or brief — spot risk before you sign.</p>
         </div>
         <div class="project-card" onclick="setAIMode('insight')" id="aiModeInsight" style="cursor:pointer;">
           <div style="font-size:24px;margin-bottom:10px;">📊</div>
@@ -1462,7 +1467,7 @@ function setAIMode(mode) {
   const invoices = DB.get(uid+'_invoices') || [];
 
   // Remove border highlights from all cards
-  ['invoice', 'proposal', 'email', 'insight', 'quote', 'evaluator', 'polisher', 'contract'].forEach(m => {
+  ['invoice', 'proposal', 'email', 'insight', 'paymentChase', 'scopeCreep', 'quoteBuilder', 'rateIncrease', 'redFlag'].forEach(m => {
     const el = document.getElementById('aiMode' + m.charAt(0).toUpperCase() + m.slice(1));
     if(el) el.style.borderColor = 'var(--border)';
   });
@@ -1561,63 +1566,94 @@ Business data:
 Provide 3-5 specific, actionable insights with concrete next steps. Be direct and data-driven.`;
       }
     },
-    quote: {
-      title:'Project Quote Builder',icon:'💰',
+    paymentChase: {
+      title:'Payment Chase',icon:'🕒',
       fields:`
-        <div class="field"><label>Project description</label><input id="aiF1" placeholder="e.g. E-commerce website migration"></div>
         <div class="modal-row">
-          <div class="field"><label>Freelancer Rate ($/hr)</label><input type="number" id="aiF2" placeholder="80" value="${currentUser.rate||''}"></div>
-          <div class="field"><label>Estimated Hours</label><input type="number" id="aiF3" placeholder="50"></div>
+          <div class="field"><label>Client Name</label><input id="aiF1" placeholder="e.g. Priya Sharma"></div>
+          <div class="field"><label>Invoice Number</label><input id="aiF2" placeholder="e.g. #1042"></div>
         </div>
         <div class="modal-row">
-          <div class="field"><label>Complexity</label><select id="aiF4"><option>Standard</option><option>Moderate</option><option>Complex</option></select></div>
-          <div class="field"><label>Rush Job?</label><select id="aiF5"><option>No</option><option>Yes</option></select></div>
+          <div class="field"><label>Invoice Amount</label><input id="aiF3" placeholder="e.g. £850"></div>
+          <div class="field"><label>Due Date</label><input id="aiF4" placeholder="e.g. June 30"></div>
         </div>
-        <div class="field"><label>Fixed Costs ($) (optional)</label><input type="number" id="aiF6" placeholder="e.g. 250"></div>
+        <div class="modal-row">
+          <div class="field"><label>Days Overdue</label><input type="number" id="aiF5" placeholder="e.g. 7"></div>
+          <div class="field"><label>Stage</label><select id="aiF6"><option value="first reminder">First Reminder (Friendly)</option><option value="follow-up">Follow-Up (Firm)</option><option value="final notice">Final Notice (Serious)</option></select></div>
+        </div>
+        <div class="field"><label>Optional Context</label><textarea id="aiF7" placeholder="e.g. they mentioned a cash flow issue last week"></textarea></div>
       `,
-      prompt: () => `Please build a project quote with a rationale paragraph.
-Project description: ${document.getElementById('aiF1').value}
-Rate: $${document.getElementById('aiF2').value}
-Estimated hours: ${document.getElementById('aiF3').value}
-Complexity: ${document.getElementById('aiF4').value}
-Rush job: ${document.getElementById('aiF5').value.toLowerCase()}
-Fixed costs: $${document.getElementById('aiF6').value || '0'}`
+      prompt: () => `Write a payment reminder email with these inputs:
+Client name: ${document.getElementById('aiF1').value}
+Invoice details: Invoice number ${document.getElementById('aiF2').value}, Amount: ${document.getElementById('aiF3').value}, Due date: ${document.getElementById('aiF4').value}
+Days overdue: ${document.getElementById('aiF5').value}
+Stage: ${document.getElementById('aiF6').value}
+Optional context: ${document.getElementById('aiF7').value || 'None'}`
     },
-    evaluator: {
-      title:'Client Evaluator',icon:'🔍',
+    scopeCreep: {
+      title:'Scope Creep Email',icon:'⚠️',
       fields:`
-        <div class="field"><label>Pasted Client Message / Project Brief</label><textarea id="aiF1" style="height:120px;" placeholder="Paste the email or brief here..."></textarea></div>
-        <div class="field"><label>Your typical minimum budget ($) (optional)</label><input type="number" id="aiF2" placeholder="e.g. 1000"></div>
+        <div class="field"><label>Original Scope (brief description)</label><textarea id="aiF1" placeholder="e.g. cover the 5 static homepage sections"></textarea></div>
+        <div class="field"><label>What's being asked for now (extra ask)</label><textarea id="aiF2" placeholder="e.g. animated banner at the top"></textarea></div>
+        <div class="modal-row">
+          <div class="field"><label>Added Cost / Pricing (optional)</label><input id="aiF3" placeholder="e.g. £200 flat fee"></div>
+          <div class="field"><label>Relationship Tone</label><select id="aiF4"><option value="good client">Good Client (Warm)</option><option value="first-time issue">First-time Issue</option><option value="repeat offender">Repeat Offender (Direct)</option></select></div>
+        </div>
       `,
-      prompt: () => `Please evaluate this prospective client's brief/message for red and green flags.
-Message/Brief:
+      prompt: () => `Write a scope creep email with these inputs:
+Original scope: ${document.getElementById('aiF1').value}
+Extra ask: ${document.getElementById('aiF2').value}
+Added cost/pricing: ${document.getElementById('aiF3').value || 'None provided'}
+Relationship tone: ${document.getElementById('aiF4').value}`
+    },
+    quoteBuilder: {
+      title:'Quote Builder',icon:'💰',
+      fields:`
+        <div class="field"><label>Project Type / Deliverable</label><input id="aiF1" placeholder="e.g. Full brand identity package"></div>
+        <div class="modal-row">
+          <div class="field"><label>Estimated Hours / Scope size</label><input type="number" id="aiF2" placeholder="e.g. 15"></div>
+          <div class="field"><label>Your Rate (hourly or target flat fee)</label><input type="number" id="aiF3" placeholder="e.g. 80"></div>
+        </div>
+        <div class="field"><label>Complexity Factors (rush job, revisions, niche expertise)</label><input id="aiF4" placeholder="e.g. two rounds of revisions, 2 weeks turnaround"></div>
+        <div class="field"><label>Client Budget Range (optional)</label><input id="aiF5" placeholder="e.g. £1000 - £1500"></div>
+      `,
+      prompt: () => `Generate a project quote and rationale paragraph with these inputs:
+Project type/deliverable: ${document.getElementById('aiF1').value}
+Hours or scope: ${document.getElementById('aiF2').value}
+Rate: ${document.getElementById('aiF3').value}
+Complexity factors: ${document.getElementById('aiF4').value}
+Client budget range: ${document.getElementById('aiF5').value || 'None'}`
+    },
+    rateIncrease: {
+      title:'Rate Increase Notice',icon:'📈',
+      fields:`
+        <div class="modal-row">
+          <div class="field"><label>Current Rate</label><input id="aiF1" placeholder="e.g. £80/hr"></div>
+          <div class="field"><label>New Rate</label><input id="aiF2" placeholder="e.g. £95/hr"></div>
+        </div>
+        <div class="modal-row">
+          <div class="field"><label>Effective Date</label><input id="aiF3" placeholder="e.g. September 1"></div>
+          <div class="field"><label>Relationship Length</label><select id="aiF4"><option value="long-time client">Long-time Client</option><option value="new-ish client">New-ish Client</option></select></div>
+        </div>
+        <div class="field"><label>Reason for rate change (optional)</label><input id="aiF5" placeholder="e.g. higher demand, advanced skills"></div>
+      `,
+      prompt: () => `Write a rate increase notice email with these inputs:
+Current rate: ${document.getElementById('aiF1').value}
+New rate: ${document.getElementById('aiF2').value}
+Effective date: ${document.getElementById('aiF3').value}
+Relationship: ${document.getElementById('aiF4').value}
+Reason: ${document.getElementById('aiF5').value || 'None provided'}`
+    },
+    redFlag: {
+      title:'Client Red-Flag Checker',icon:'🚩',
+      fields:`
+        <div class="field"><label>Raw Client Message / Project Brief</label><textarea id="aiF1" style="height:120px;" placeholder="Paste the message or brief here..."></textarea></div>
+        <div class="field"><label>Your own red-line criteria (optional)</label><input id="aiF2" placeholder="e.g. I always require a deposit"></div>
+      `,
+      prompt: () => `Evaluate this prospective client brief/message for red and green flags with these inputs:
+Pasted message/brief:
 ${document.getElementById('aiF1').value}
-
-Freelancer minimum budget context: $${document.getElementById('aiF2').value || 'None provided'}`
-    },
-    polisher: {
-      title:'Feedback Polisher',icon:'✨',
-      fields:`
-        <div class="field"><label>Rough Feedback</label><textarea id="aiF1" style="height:100px;" placeholder="e.g. Sarah was great, app designs are clean, done way ahead of schedule..."></textarea></div>
-        <div class="modal-row">
-          <div class="field"><label>Client Name</label><input id="aiF2" placeholder="e.g. Jane Doe"></div>
-          <div class="field"><label>Client Role/Company (optional)</label><input id="aiF3" placeholder="e.g. CEO at TechCorp"></div>
-        </div>
-      `,
-      prompt: () => `Please turn this client's rough, informal feedback into a polished, quotable case study blurb.
-Feedback: ${document.getElementById('aiF1').value}
-Client name: ${document.getElementById('aiF2').value}
-Role/Company: ${document.getElementById('aiF3').value || 'None'}`
-    },
-    contract: {
-      title:'Contract Clause Generator',icon:'⚖️',
-      fields:`
-        <div class="field"><label>Clause Type</label><select id="aiF1"><option>Payment Terms</option><option>Late Payment Penalties</option><option>Intellectual Property / Ownership</option><option>Termination & Kill Fee</option><option>Rounds of Revisions</option><option>Scope Change Procedures</option></select></div>
-        <div class="field"><label>Specific Terms / Requirements (optional)</label><textarea id="aiF2" placeholder="e.g. 2 rounds of revisions, payment due within 14 days, etc..."></textarea></div>
-      `,
-      prompt: () => `Please draft starting-point contract clause language.
-Clause type: ${document.getElementById('aiF1').value}
-Specific terms requested: ${document.getElementById('aiF2').value || 'None provided'}`
+My red-line criteria: ${document.getElementById('aiF2').value || 'None'}`
     }
   };
 
@@ -1675,12 +1711,13 @@ async function runAI() {
     const modeMapping = {
       invoice: 'invoice',
       proposal: 'proposal',
-      quote: 'proposal',
       email: 'email',
       insight: 'insight',
-      evaluator: 'general',
-      polisher: 'general',
-      contract: 'general'
+      paymentChase: 'paymentChase',
+      scopeCreep: 'scopeCreep',
+      quoteBuilder: 'quoteBuilder',
+      rateIncrease: 'rateIncrease',
+      redFlag: 'redFlag'
     };
     const backendMode = modeMapping[window.__currentAIMode] || 'general';
 
